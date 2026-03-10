@@ -15,6 +15,25 @@ export const config: PlasmoCSConfig = {
 
 console.log('Privacy Shadow: Form monitor active');
 
+/**
+ * Safely send message to background script with error handling
+ */
+function safeSendMessage(message: any): void {
+  try {
+    chrome.runtime.sendMessage(message).catch((error) => {
+      // Silently handle context invalidation errors
+      if (error.message?.includes('Extension context invalidated')) {
+        console.log('Privacy Shadow: Extension reloaded, content script will be reinitialized');
+      } else {
+        console.error('Privacy Shadow: Error sending message:', error);
+      }
+    });
+  } catch (error) {
+    // Extension context already invalidated
+    console.log('Privacy Shadow: Extension context invalidated');
+  }
+}
+
 function detectPlatform(url: string): 'instagram' | 'twitter' | 'facebook' | 'tiktok' | 'youtube' | 'discord' | 'generic' {
   const hostname = new URL(url).hostname.toLowerCase();
   if (hostname.includes('instagram.com')) return 'instagram';
@@ -84,10 +103,10 @@ function attachInputMonitor(el: Element): void {
       const reasons = [...new Set(detected.map(p => p.description))];
       const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
 
-      chrome.runtime.sendMessage({
+      safeSendMessage({
         type: 'FORM_SUBMISSION',
         data: { pii: detected, context: { platform, isPublic: true, isDirectMessage: false, formType: 'realtime' }, formId: (el as HTMLElement).id || '' }
-      }).catch(() => {});
+      });
 
       showPrivacyAlert({
         risk: { level, score, reasons, detectedTypes: detected.map(p => p.type) },
@@ -362,7 +381,57 @@ function init(): void {
     document.body || document.documentElement,
     { childList: true, subtree: true }
   );
+
+  // Handle extension reload
+  if (chrome.runtime?.id) {
+    chrome.runtime.onConnect.addListener((port) => {
+      port.onDisconnect.addListener(() => {
+        // Extension was reloaded, show notification
+        showReloadNotification();
+      });
+    });
+  }
+
   console.log('Privacy Shadow: Form monitor ready');
+}
+
+/**
+ * Show notification when extension is reloaded
+ */
+function showReloadNotification(): void {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #3b82f6;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    animation: slideIn 0.3s ease-out;
+  `;
+  notification.innerHTML = '🔄 Privacy Shadow extension updated! Refresh the page for latest features.';
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `;
+
+  document.head.appendChild(style);
+  document.body.appendChild(notification);
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => notification.remove(), 300);
+  }, 5000);
 }
 
 if (document.readyState === 'loading') {
@@ -371,7 +440,25 @@ if (document.readyState === 'loading') {
   init();
 }
 
+// Listen for extension unload to handle context invalidation
+chrome.runtime.onConnect.addListener((port) => {
+  port.onDisconnect.addListener(() => {
+    console.log('Privacy Shadow: Extension context invalidated, cleanup needed');
+  });
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type === 'CHECK_FORMS') sendResponse({ formCount: document.querySelectorAll('form').length });
+  try {
+    if (message.type === 'CHECK_FORMS') {
+      sendResponse({ formCount: document.querySelectorAll('form').length });
+    }
+  } catch (error) {
+    console.log('Privacy Shadow: Error in message listener:', error);
+  }
   return true;
+});
+
+// Handle page unload
+window.addEventListener('unload', () => {
+  console.log('Privacy Shadow: Page unloading, cleaning up');
 });
