@@ -14,3 +14,4 @@ export const config: PlasmoCSConfig = {
 import "./extension/contents/form-monitor";
 import "./extension/contents/dom-monitor";
 import "./extension/contents/image-monitor";
+import "./extension/contents/stranger-monitor";
