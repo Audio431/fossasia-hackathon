@@ -678,12 +678,27 @@ if (document.readyState === 'loading') {
   instagramMonitor.initialize();
 }
 
-// Handle messages from background script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'CHECK_INSTAGRAM_DM') {
-    instagramMonitor.analyzeCurrentDMThread();
-    sendResponse({ status: 'analyzing' });
+// Helper to check if extension context is valid
+function isExtensionContextValid(): boolean {
+  try {
+    return !!(chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
   }
+}
 
-  return true;
-});
+// Handle messages from background script with error handling
+if (isExtensionContextValid()) {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    try {
+      if (message.type === 'CHECK_INSTAGRAM_DM') {
+        instagramMonitor.analyzeCurrentDMThread();
+        sendResponse({ status: 'analyzing' });
+      }
+    } catch (error) {
+      console.error('Privacy Shadow: Error in message handler:', error);
+    }
+
+    return true;
+  });
+}

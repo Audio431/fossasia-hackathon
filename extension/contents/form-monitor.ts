@@ -16,21 +16,41 @@ export const config: PlasmoCSConfig = {
 console.log('Privacy Shadow: Form monitor active');
 
 /**
+ * Check if extension context is still valid
+ */
+function isExtensionContextValid(): boolean {
+  try {
+    return !!(chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Safely send message to background script with error handling
  */
 function safeSendMessage(message: any): void {
+  if (!isExtensionContextValid()) {
+    console.log('Privacy Shadow: Extension context invalidated, skipping message');
+    return;
+  }
+
   try {
     chrome.runtime.sendMessage(message).catch((error) => {
       // Silently handle context invalidation errors
-      if (error.message?.includes('Extension context invalidated')) {
+      if (error?.message?.includes('Extension context invalidated') ||
+          error?.message?.includes('message port closed') ||
+          error?.message?.includes('Extension context')) {
         console.log('Privacy Shadow: Extension reloaded, content script will be reinitialized');
-      } else {
+      } else if (error) {
         console.error('Privacy Shadow: Error sending message:', error);
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     // Extension context already invalidated
-    console.log('Privacy Shadow: Extension context invalidated');
+    if (error?.message?.includes('Extension context invalidated')) {
+      console.log('Privacy Shadow: Extension context invalidated');
+    }
   }
 }
 

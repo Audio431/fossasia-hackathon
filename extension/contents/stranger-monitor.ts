@@ -9,6 +9,37 @@
 import { detectStrangerRisk } from '../detection/stranger-detector';
 import { loadSettings } from '../utils/settings';
 
+/**
+ * Check if extension context is still valid
+ */
+function isExtensionContextValid(): boolean {
+  try {
+    return !!(chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Safely send message to background script
+ */
+function safeSendMessage(message: any): void {
+  if (!isExtensionContextValid()) {
+    return;
+  }
+
+  try {
+    chrome.runtime.sendMessage(message).catch((error: any) => {
+      // Silently handle context invalidation errors
+      if (!error?.message?.includes('Extension context invalidated')) {
+        console.error('Privacy Shadow: Error sending message:', error);
+      }
+    });
+  } catch {
+    // Extension context invalidated, ignore
+  }
+}
+
 // Platforms where this monitor is most relevant
 const CHAT_SELECTORS: string[] = [
   // Instagram DMs
@@ -155,7 +186,7 @@ function attachMonitor(el: Element): void {
         if (risk.level === 'warning' || risk.level === 'danger') {
           showStrangerWarning(risk.flags);
 
-          chrome.runtime.sendMessage({
+          safeSendMessage({
             type: 'STRANGER_RISK_DETECTED',
             data: {
               score: risk.score,
@@ -164,7 +195,7 @@ function attachMonitor(el: Element): void {
               categories: risk.categories,
               url: window.location.href,
             },
-          }).catch(() => {});
+          });
         }
       });
     }, 800);
