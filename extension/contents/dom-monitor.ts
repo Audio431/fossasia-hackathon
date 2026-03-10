@@ -5,8 +5,23 @@
  */
 
 import type { PlasmoCSConfig } from "plasmo";
-import { detectPII, DetectionContext } from '../detection/pii-detector';
+import { detectPII, calculatePIIRiskScore, hasHighRiskCombinations, DetectionContext } from '../detection/pii-detector';
 import { showPrivacyAlert } from '../utils/alert-overlay';
+
+
+/** Compute proper severity-weighted risk score. */
+function computeRiskScore(detected: ReturnType<typeof detectPII>): number {
+  let score = calculatePIIRiskScore(detected);
+  if (hasHighRiskCombinations(detected)) score = Math.min(score + 25, 100);
+  return Math.min(score, 100);
+}
+
+/** Build human-readable reasons sorted by severity. */
+function buildReasons(detected: ReturnType<typeof detectPII>): string[] {
+  const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const sorted = [...detected].sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+  return [...new Set(sorted.map(p => p.description))];
+}
 
 export const config: PlasmoCSConfig = {
   matches: [
@@ -229,11 +244,11 @@ async function checkElementForPII(element: Element): Promise<void> {
 
       // If high risk, show warning overlay
       if (response && response.block) {
-        const reasons = detectedPII.map((p: any) => p.description);
-        const score = Math.min(detectedPII.length * 30, 100);
-        const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
+        const reasons = buildReasons(detectedPII);
+        const score = computeRiskScore(detectedPII);
+        const level: string = score >= 70 ? 'critical' : score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
         showPrivacyAlert({
-          risk: { level, score, reasons },
+          risk: { level, score, reasons, detectedTypes: detectedPII.map(p => p.type) },
           onContinue: () => {},
           onCancel: () => highlightRiskyElement(element, response.risk),
         });
@@ -290,6 +305,8 @@ function initializeDOMMonitoring(): void {
   }
 
   // Set up MutationObserver for new content
+  const debouncedCheckElement = debounce((element: Element) => checkElementForPII(element), 400);
+
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
@@ -302,13 +319,13 @@ function initializeDOMMonitoring(): void {
             allSelectors.forEach((selector) => {
               try {
                 if (element.matches(selector)) {
-                  checkElementForPII(element);
+                  debouncedCheckElement(element);
                 }
 
                 // Check child elements
                 const children = element.querySelectorAll(selector);
                 children.forEach((child) => {
-                  checkElementForPII(child);
+                  debouncedCheckElement(child);
                 });
               } catch (error) {
                 // Selector syntax error, skip
@@ -343,7 +360,7 @@ function initializeDOMMonitoring(): void {
             // Monitor bio edits
             const bioElements = element.querySelectorAll('div[class*="bio"]');
             bioElements.forEach((bio) => {
-              checkElementForPII(bio);
+              debouncedCheckElement(bio);
             });
           }
         }
@@ -451,7 +468,7 @@ function monitorInstagramSpecific(): void {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
 
-    const riskScore = detectedPII.length * 30;
+    const riskScore = computeRiskScore(detectedPII);
     const riskLevel = riskScore > 50 ? 'high' : 'medium';
 
     warningOverlay.innerHTML = `

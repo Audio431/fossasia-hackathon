@@ -18,6 +18,7 @@ interface Alert {
     level: string;
     score: number;
     reasons: string[];
+    detectedTypes?: string[];
   };
   context: {
     website: string;
@@ -101,6 +102,20 @@ function IndexPopup() {
       case 'medium': return '🔶';
       default: return '💡';
     }
+  };
+
+  const PII_TYPE_ICONS: Record<string, string> = {
+    name: '👤', routine: '🕐', location: '📍', birthdate: '🎂',
+    contact: '📞', address: '🏠', school: '🏫', financial: '💳',
+    identity: '🪪', image: '📸',
+  };
+
+  const getPIITypeLabel = (types?: string[]): string => {
+    if (!types || types.length === 0) return '🔒 PII';
+    const unique = [...new Set(types)].slice(0, 3);
+    return unique.map(t => PII_TYPE_ICONS[t] ?? '🔒').join('') + ' ' + unique.map(t =>
+      t.charAt(0).toUpperCase() + t.slice(1)
+    ).join(', ');
   };
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
@@ -242,7 +257,7 @@ function IndexPopup() {
                         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
                           isStranger ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {isStranger ? '🚨 Stranger' : '🔒 PII'}
+                          {isStranger ? '🚨 Stranger' : getPIITypeLabel(alert.risk.detectedTypes)}
                         </span>
                       </div>
                       <ul className="space-y-0.5">

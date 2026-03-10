@@ -8,6 +8,8 @@ import { detectPII, calculatePIIRiskScore, hasHighRiskCombinations } from '../de
 import { showPrivacyAlert } from '../utils/alert-overlay';
 import { loadSettings, isQuietHours, SENSITIVITY_THRESHOLDS } from '../utils/settings';
 import { notifyParentViaWhatsApp } from '../utils/whatsapp-notifier';
+import { showNotificationSimulator } from '../utils/notification-simulator';
+import { generateAlertMessage } from '../utils/whatsapp-notifier';
 
 
 /**
@@ -189,6 +191,20 @@ function attachInputMonitor(el: Element): void {
       ).catch((error) => {
         console.error('WhatsApp notification failed:', error);
       });
+
+      // Show visual notification simulator for demo
+      const alertData = {
+        message: generateAlertMessage({
+          platform,
+          piiType: detected.map(p => p.type).join(', '),
+          riskLevel: level,
+          message: value,
+          timestamp: new Date(),
+        }),
+        platform,
+        piiType: detected.map(p => p.type).join(', '),
+      };
+      showNotificationSimulator(alertData);
     }, 300); // Short delay on blur to prevent immediate popup
   }, true); // Use capture phase to catch blur before other handlers
 

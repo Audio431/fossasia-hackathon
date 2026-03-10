@@ -26,9 +26,9 @@ npm run build
 2. Enable **Developer mode**
 3. Click **Load unpacked** → select `build/chrome-mv3-dev`
 
-**Try the Demo**: Open `demos/index.html` or `demos/showcase.html` in your browser.
+**Try the Demo**: Open `demo-enhanced-notification.html` in your browser for an interactive demo with beautiful visual notifications!
 
-📖 See [Quick Start Guide](./docs/QUICKSTART.md) for a detailed walkthrough.
+📖 See [Hackathon Demo Guide](./HACKATHON-DEMO-GUIDE.md) for demo instructions and [Quick Start Guide](./docs/QUICKSTART.md) for setup details.
 
 ---
 
@@ -68,12 +68,29 @@ Instagram · Twitter/X · Facebook · TikTok · YouTube · Discord · Snapchat
 - Quiet hours (pause alerts during sleep)
 - Educational tips toggle
 
+### 📱 WhatsApp Parent Notifications (Enhanced Demo Mode)
+- **Visual notification simulator** with beautiful WhatsApp-style design
+- Real-time alerts when children share sensitive information
+- Rate limiting (max 5 per hour) prevents spam
+- Configurable minimum alert level (high/critical only)
+- Demo mode works without any backend setup
+- Optional real WhatsApp integration via Telegram/Discord (free) or Twilio (paid)
+- See [FREE-ALTERNATIVES.md](./FREE-ALTERNATIVES.md) for free integration options
+
 ---
 
 ## 🎬 Demo
 
-- **[Interactive Demo](./test.html)** — Fill PII and grooming scenarios, see the logger
+- **[Enhanced Demo Mode](./demo-enhanced-notification.html)** ⭐ NEW! Interactive demo with beautiful WhatsApp-style notifications
+- **[Interactive Test](./test.html)** — Fill PII and grooming scenarios, see the logger
 - **[Visual Showcase](./demos/showcase.html)** — Hackathon judge presentation
+
+### ✨ Enhanced Demo Mode Features:
+- 📱 Beautiful animated WhatsApp-style notifications
+- 🎯 Real-time PII detection visualization
+- 👨‍👩‍👧 Parent notification simulation
+- 🎨 Smooth slide-in animations
+- ⚡ Zero setup required - works instantly!
 
 ---
 

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Shadow - Enhanced Demo Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 18px;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #1f2937;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .demo-box {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 16px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 32px;
+        }
+
+        .feature-card {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-card h3 {
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .feature-card p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #047857;
+            line-height: 1.6;
+        }
+
+        .emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Privacy Shadow - Enhanced Demo Mode</h1>
+            <p class="subtitle">Beautiful Visual Notifications Without Any Backend Setup</p>
+        </header>
+
+        <div class="demo-section">
+            <h2>🎯 Try It Now!</h2>
+            <p>Type a message with personal information and click outside the textarea:</p>
+
+            <div class="demo-box">
+                <textarea
+                    id="test-input"
+                    placeholder="Try typing: 'My address is 123 Main Street, Springfield' or 'My phone number is 555-1234'"
+                ></textarea>
+                <br>
+                <button onclick="triggerDemo()">Show Demo Notification</button>
+            </div>
+
+            <div class="info-box">
+                <h3>✨ What You'll See</h3>
+                <p>
+                    <strong>1.</strong> Alert appears to child with risk assessment<br>
+                    <strong>2.</strong> Beautiful WhatsApp notification slides in from the right<br>
+                    <strong>3.</strong> Shows platform, detected PII type, and message preview<br>
+                    <strong>4.</strong> Auto-dismisses after 4 seconds with smooth animation
+                </p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎨 Features of Enhanced Demo Mode</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <div class="emoji">📱</div>
+                    <h3>WhatsApp Style</h3>
+                    <p>Beautiful green gradient matching WhatsApp's brand colors for instant recognition</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">✨</div>
+                    <h3>Smooth Animations</h3>
+                    <p>Elegant slide-in from right with fade effects, auto-dismiss with slide-out</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">🎯</div>
+                    <h3>Rich Information</h3>
+                    <p>Shows platform, PII type detected, and preview of message parent would receive</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">⚡</div>
+                    <h3>Zero Setup</h3>
+                    <p>Works immediately without any API keys, backend server, or configuration</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🚀 Perfect for Hackathons</h2>
+            <div class="info-box">
+                <h3>Why Enhanced Demo Mode is Ideal</h3>
+                <p>
+                    <strong>✅ No Setup Required:</strong> Works out of the box<br>
+                    <strong>✅ Visual Impact:</strong> Judges see the complete flow in action<br>
+                    <strong>✅ Reliable:</strong> No API failures, no rate limits, no costs<br>
+                    <strong>✅ Professional:</strong> Beautiful animations and modern design<br>
+                    <strong>✅ Educational:</strong> Shows exactly what parents would receive<br>
+                    <strong>✅ Full Feature Demo:</strong> Demonstrates all functionality
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple PII detection for demo
+        function detectPII(text) {
+            const patterns = {
+                address: /\b\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/i,
+                phone: /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+                email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+                ssn: /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/
+            };
+
+            const detected = [];
+            if (patterns.address.test(text)) detected.push('Address');
+            if (patterns.phone.test(text)) detected.push('Phone Number');
+            if (patterns.email.test(text)) detected.push('Email');
+            if (patterns.ssn.test(text)) detected.push('SSN');
+
+            return detected;
+        }
+
+        function showNotificationSimulator(data) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                z-index: 2147483647;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                animation: slideIn 0.3s ease-out;
+                max-width: 400px;
+            `;
+
+            modal.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <span style="font-size: 32px;">📱</span>
+                    <div>
+                        <div style="font-weight: 700; font-size: 16px;">WhatsApp Sent!</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Parent notified successfully</div>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; font-size: 13px;">
+                    <strong>Platform:</strong> ${data.platform}<br/>
+                    <strong>Detected:</strong> ${data.piiType}<br/>
+                    <strong style="display: block; margin-top: 8px;">Parent would receive:</strong>
+                    "${data.message.substring(0, 80)}${data.message.length > 80 ? '...' : ''}"
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            setTimeout(() => {
+                modal.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => modal.remove(), 300);
+            }, 4000);
+
+            if (!document.getElementById('notification-simulator-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-simulator-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function generateAlertMessage(data) {
+            return `🛡️ ⚠️ Privacy Shadow Alert
+
+Your child just shared sensitive information on ${data.platform}:
+
+📍 What was detected: ${data.piiType}
+⚠️ Risk level: ${data.riskLevel}
+
+💬 Message: "${data.message}"
+
+🕐 ${new Date().toLocaleTimeString()}
+
+Talk to your child about online safety.`;
+        }
+
+        function triggerDemo() {
+            const input = document.getElementById('test-input');
+            const text = input.value;
+
+            if (!text.trim()) {
+                alert('Please type a message first!');
+                return;
+            }
+
+            const detected = detectPII(text);
+
+            if (detected.length === 0) {
+                alert('No personal information detected. Try including an address, phone number, or email.');
+                return;
+            }
+
+            const alertData = {
+                message: generateAlertMessage({
+                    platform: 'Demo Platform',
+                    piiType: detected.join(', '),
+                    riskLevel: 'HIGH',
+                    message: text
+                }),
+                platform: 'Demo Platform',
+                piiType: detected.join(', ')
+            };
+
+            showNotificationSimulator(alertData);
+
+            // Also show child alert
+            showChildAlert(detected);
+        }
+
+        function showChildAlert(detected) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2147483646;
+                animation: fadeIn 0.2s ease-out;
+            `;
+
+            overlay.innerHTML = `
+                <div style="background: white; padding: 32px; border-radius: 16px; max-width: 500px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                    <h2 style="color: #1f2937; margin-bottom: 16px;">Wait! Before you send...</h2>
+                    <p style="color: #6b7280; margin-bottom: 24px;">
+                        Privacy Shadow detected you're about to share: <strong>${detected.join(', ')}</strong>
+                    </p>
+                    <p style="color: #6b7280; margin-bottom: 24px;">
+                        This could be personal information. Your parent will be notified.
+                    </p>
+                    <button onclick="this.closest('div').parentElement.remove()" style="margin: 0 8px;">
+                        I Understand
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Add fade-in animation
+            if (!document.getElementById('child-alert-styles')) {
+                const style = document.createElement('style');
+                style.id = 'child-alert-styles';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        // Auto-trigger on blur
+        document.getElementById('test-input').addEventListener('blur', function() {
+            if (this.value.trim()) {
+                triggerDemo();
+            }
+        });
+    </script>
+</body>
+</html>

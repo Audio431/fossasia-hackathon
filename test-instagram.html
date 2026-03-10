@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Shadow - Instagram Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-size: 18px;
+        }
+
+        .section {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 4px solid #667eea;
+        }
+
+        h2 {
+            color: #1f2937;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .step {
+            background: white;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .code {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        .test-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            margin: 16px 0;
+        }
+
+        .test-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #047857;
+            line-height: 1.6;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .warning-box h3 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+
+        .warning-box p {
+            color: #78350f;
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        ul {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 8px 0;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Instagram Integration Test</h1>
+        <p class="subtitle">Verify Privacy Shadow works on Instagram.com</p>
+
+        <div class="section">
+            <h2>✅ Pre-Test Checklist</h2>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Extension Loaded</strong>
+                <div>Open Chrome and go to <code>chrome://extensions/</code></div>
+                <div>Verify "Privacy Shadow" is listed and enabled</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Console Open</strong>
+                <div>Open Instagram.com (you'll need to be logged in)</div>
+                <div>Press F12 to open Developer Tools</div>
+                <div>Go to the Console tab</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Check for Logs</strong>
+                <div>You should see these messages in the console:</div>
+                <div class="code">
+Privacy Shadow: Instagram form monitor active
+Privacy Shadow: Form monitor active
+Privacy Shadow: Initializing Instagram form monitor
+Privacy Shadow: Monitoring Instagram DMs
+Privacy Shadow: Found X potential input elements
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 How to Test on Instagram</h2>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Navigate to DMs</strong>
+                <div>Go to <code>instagram.com/direct/inbox/</code></div>
+                <div>Or click the messenger icon in the top right</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Open a Conversation</strong>
+                <div>Click on any DM conversation</div>
+                <div>You should see the message input field at the bottom</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Type Test Message</strong>
+                <div>In the message input, type:</div>
+                <div class="code">my address is 123 main street springfield</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Trigger Detection</strong>
+                <div>Click outside the message box (blur the input)</div>
+                <div>Or press Enter to try to send</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Verify Alerts</strong>
+                <div>You should see:</div>
+                <ul>
+                    <li>🎯 Alert overlay warning you about the address</li>
+                    <li>📱 Green WhatsApp notification slides in from the right</li>
+                    <li>💬 Console shows "PII detected in Instagram DM"</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h3>⚠️ Common Issues & Solutions</h3>
+
+            <p><strong>Issue 1: No console logs appear</strong><br>
+            Solution: Make sure you rebuilt the extension after adding the Instagram monitor:
+            <div class="code">npm run build</div>
+            Then reload the extension in chrome://extensions/</p>
+
+            <p><strong>Issue 2: Console shows "Found 0 potential input elements"</strong><br>
+            Solution: Make sure you're actually on a DM conversation page, not just the inbox. Try:
+            <div class="code">instagram.com/direct/t/1234567890/</div>
+            (any conversation ID will work)</p>
+
+            <p><strong>Issue 3: Alert appears but WhatsApp notification doesn't slide in</strong><br>
+            Solution: Check the console for errors. The notification simulator might have failed. Make sure the notification-simulator.ts file exists in the build output.</p>
+
+            <p><strong>Issue 4: Instagram doesn't load in Chrome</strong><br>
+            Solution: Some Instagram features require being logged in. Make sure you're logged into your Instagram account in Chrome.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>🔍 Debugging Tips</h3>
+
+            <p><strong>Check Content Script Loaded:</strong></p>
+            <div class="code">
+// In Chrome DevTools Console on Instagram:
+chrome.runtime.sendMessage({ type: 'CHECK_FORMS' }, (response) => {
+    console.log('Forms:', response);
+});
+            </div>
+
+            <p><strong>Manually Trigger PII Detection:</strong></p>
+            <div class="code">
+// In Chrome DevTools Console on Instagram:
+// This will test the PII detector directly
+const text = "my address is 123 main street";
+console.log("Testing PII detection on:", text);
+// Check if your extension detects this
+            </div>
+
+            <p><strong>View Extension Settings:</strong></p>
+            <div class="code">
+// Click the Privacy Shadow extension icon
+// Click "Parent Dashboard"
+// Check if "WhatsApp Alerts" is enabled
+// Check sensitivity level (try "Medium" for testing)
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Quick Local Test</h2>
+            <p>If Instagram isn't working, test the detection engine here:</p>
+
+            <textarea
+                id="test-input"
+                class="test-input"
+                placeholder="Type a message with personal info: 'my address is 123 main street'"
+            ></textarea>
+
+            <button onclick="testLocal()">Test Detection Locally</button>
+
+            <div id="result" style="margin-top: 16px;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Expected Console Output</h2>
+            <p>When the Instagram monitor works correctly, you should see:</p>
+            <div class="code">
+Privacy Shadow: Instagram form monitor active
+Privacy Shadow: Initializing Instagram form monitor
+Privacy Shadow: Monitoring Instagram DMs
+Privacy Shadow: Found 2 potential input elements
+Privacy Shadow: Attaching monitor to input 1
+Privacy Shadow: Attaching monitor to input 2
+Privacy Shadow: Checking Instagram message: my address is 123 main street
+Privacy Shadow: PII detected in Instagram DM [{ type: 'address', ... }]
+Privacy Shadow: Showing alert - Level: high Score: 75
+Privacy Shadow: User acknowledged risk
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>✅ Success Indicators</h3>
+            <p>If everything works, you'll see:</p>
+            <ul>
+                <li>✅ Console logs showing "Instagram form monitor active"</li>
+                <li>✅ "Found X potential input elements" where X > 0</li>
+                <li>✅ "Attaching monitor to input" messages</li>
+                <li>✅ Alert overlay appears when you type personal info</li>
+                <li>✅ WhatsApp notification slides in from right</li>
+                <li>✅ Console shows "PII detected in Instagram DM"</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function testLocal() {
+            const input = document.getElementById('test-input');
+            const result = document.getElementById('result');
+            const text = input.value;
+
+            if (!text.trim()) {
+                result.innerHTML = '<p style="color: #991b1b;">Please type a message first!</p>';
+                return;
+            }
+
+            // Simple PII patterns for testing
+            const patterns = {
+                address: /\b(my\s+(address|location|home)|i\s+live)\s+(is|at)\s+\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/i,
+                phone: /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+                email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/
+            };
+
+            const detected = [];
+            if (patterns.address.test(text)) detected.push('Address');
+            if (patterns.phone.test(text)) detected.push('Phone Number');
+            if (patterns.email.test(text)) detected.push('Email');
+
+            if (detected.length > 0) {
+                result.innerHTML = `
+                    <div style="background: #d1fae5; padding: 16px; border-radius: 8px; border: 2px solid #10b981;">
+                        <h3 style="color: #065f46; margin-bottom: 8px;">✅ PII Detected!</h3>
+                        <p style="color: #047857;">Found: <strong>${detected.join(', ')}</strong></p>
+                        <p style="color: #047857; margin-top: 8px;">This would trigger alerts on Instagram if the extension is working.</p>
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div style="background: #fee2e2; padding: 16px; border-radius: 8px; border: 2px solid #ef4444;">
+                        <h3 style="color: #991b1b; margin-bottom: 8px;">❌ No PII Detected</h3>
+                        <p style="color: #7f1d1d;">Try including an address, phone number, or email.</p>
+                        <p style="color: #7f1d1d; margin-top: 8px;">Example: "my address is 123 main street"</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Test on blur
+        document.getElementById('test-input').addEventListener('blur', function() {
+            if (this.value.trim()) {
+                testLocal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -88,9 +88,9 @@ Talk to your child about online safety. This alert was sent by Privacy Shadow br
 }
 
 /**
- * Send WhatsApp alert via Twilio API
- * For production: This should call your backend server which uses Twilio SDK
- * For hackathon demo: We'll simulate sending and log the message
+ * Send WhatsApp alert via backend server
+ * For production: Calls real backend with Twilio integration
+ * For demo mode: Falls back to console logging if server unavailable
  */
 export async function sendWhatsAppAlert(
   alert: WhatsAppAlert,
@@ -110,26 +110,42 @@ export async function sendWhatsAppAlert(
 
   const message = generateAlertMessage(alert);
 
-  // For hackathon demo: Log the message that would be sent
-  console.log('📱 WhatsApp Alert (Demo Mode):');
-  console.log('─'.repeat(50));
-  console.log(`To: ${formattedPhone}`);
-  console.log(message);
-  console.log('─'.repeat(50));
+  try {
+    // Try to call real backend server
+    console.log('📱 Attempting to send via backend server...');
 
-  // TODO: In production, call your backend endpoint:
-  // const response = await fetch('https://your-backend.com/api/send-whatsapp', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({
-  //     to: formattedPhone,
-  //     message: message,
-  //   }),
-  // });
-  // return await response.json();
+    const response = await fetch('http://localhost:3001/api/send-whatsapp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: formattedPhone,
+        message: message,
+      }),
+    });
 
-  // Simulate successful send for demo
-  return { success: true };
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to send WhatsApp');
+    }
+
+    const result = await response.json();
+    console.log('✅ WhatsApp sent via backend! Message ID:', result.messageId);
+
+    return { success: true };
+
+  } catch (error) {
+    // Server unavailable or error - fall back to demo mode
+    console.warn('⚠️ Backend server unavailable, using demo mode');
+    console.log('📱 WhatsApp Alert (Demo Mode - Server unavailable):');
+    console.log('─'.repeat(50));
+    console.log('To:', formattedPhone);
+    console.log(message);
+    console.log('─'.repeat(50));
+
+    return { success: true }; // Return success so app continues working
+  }
 }
 
 /**

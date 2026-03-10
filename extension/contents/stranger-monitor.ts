@@ -9,6 +9,8 @@
 import { detectStrangerRisk } from '../detection/stranger-detector';
 import { loadSettings } from '../utils/settings';
 import { notifyParentViaWhatsApp } from '../utils/whatsapp-notifier';
+import { showNotificationSimulator } from '../utils/notification-simulator';
+import { generateAlertMessage } from '../utils/whatsapp-notifier';
 
 /**
  * Check if extension context is still valid
@@ -212,6 +214,20 @@ function attachMonitor(el: Element): void {
           ).catch((error) => {
             console.error('WhatsApp notification failed:', error);
           });
+
+          // Show visual notification simulator for demo
+          const alertData = {
+            message: generateAlertMessage({
+              platform,
+              piiType: ['Stranger Danger', ...risk.flags].join(', '),
+              riskLevel,
+              message: `Suspicious conversation detected: ${risk.flags.slice(0, 3).join(', ')}`,
+              timestamp: new Date(),
+            }),
+            platform,
+            piiType: ['Stranger Danger', ...risk.flags].join(', '),
+          };
+          showNotificationSimulator(alertData);
 
           safeSendMessage({
             type: 'STRANGER_RISK_DETECTED',
