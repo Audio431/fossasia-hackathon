@@ -21,7 +21,7 @@ const TEST_PAGE = `file://${path.resolve(__dirname, '../test.html')}`;
 test.describe('Demo page UI', () => {
   test('loads and shows the Privacy Shadow hero', async ({ page }) => {
     await page.goto(TEST_PAGE);
-    await expect(page.locator('h1')).toContainText('Privacy Shadow');
+    await expect(page.locator('h1').filter({ hasText: 'Privacy Shadow' }).first()).toContainText('Privacy Shadow');
     await expect(page.locator('.hero-ghost')).toBeVisible();
   });
 
