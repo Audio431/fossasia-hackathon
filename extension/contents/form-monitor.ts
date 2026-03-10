@@ -136,6 +136,120 @@ function scanAndAttach(): void {
   document.querySelectorAll(sel).forEach(attachInputMonitor);
 }
 
+/**
+ * Highlight a message/element containing PII with a red warning box
+ */
+function highlightPII(element: HTMLElement, detected: any[]): void {
+  // Skip if already highlighted
+  if (element.hasAttribute('data-pii-highlighted')) return;
+
+  // Mark as highlighted
+  element.setAttribute('data-pii-highlighted', 'true');
+
+  // Create warning wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'privacy-shadow-pii-wrapper';
+  wrapper.style.cssText = `
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    border: 3px solid #ef4444;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    padding: 12px;
+    margin: 8px 0;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    animation: pii-pulse 2s ease-in-out infinite;
+  `;
+
+  // Add dismiss button
+  const dismissBtn = document.createElement('button');
+  dismissBtn.textContent = '✕';
+  dismissBtn.style.cssText = `
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  `;
+  dismissBtn.title = 'Dismiss warning';
+  dismissBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    wrapper.style.border = '2px solid #f59e0b';
+    wrapper.style.background = '#fffbeb';
+    badge.textContent = '⚠️ PII NOTED';
+    badge.style.background = '#f59e0b';
+    dismissBtn.remove();
+  };
+  wrapper.appendChild(dismissBtn);
+
+  // Add warning badge
+  const badge = document.createElement('div');
+  badge.style.cssText = `
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #ef4444;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    z-index: 1000;
+    white-space: nowrap;
+  `;
+  badge.innerHTML = '⚠️ PII SHARED';
+  wrapper.appendChild(badge);
+
+  // Add warning message
+  const warning = document.createElement('div');
+  warning.className = 'privacy-shadow-pii-warning';
+  warning.style.cssText = `
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 4px;
+    font-size: 12px;
+    color: #991b1b;
+  `;
+  const piiTypes = [...new Set(detected.map(p => p.type))].join(', ');
+  warning.innerHTML = `<strong>⛔ Warning:</strong> You shared sensitive info: <strong>${piiTypes}</strong>`;
+  wrapper.appendChild(warning);
+
+  // Wrap the element
+  element.parentNode?.insertBefore(wrapper, element);
+  wrapper.appendChild(element);
+
+  // Add pulsing animation
+  if (!document.getElementById('privacy-shadow-styles')) {
+    const style = document.createElement('style');
+    style.id = 'privacy-shadow-styles';
+    style.textContent = `
+      @keyframes pii-pulse {
+        0%, 100% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  console.log('Privacy Shadow: Highlighted PII message', detected);
+}
+
 async function handleFormSubmit(event: Event): Promise<void> {
   const form = event.target as HTMLFormElement;
   if (!form) return;
@@ -155,14 +269,95 @@ async function handleFormSubmit(event: Event): Promise<void> {
 
   showPrivacyAlert({
     risk: { level, score, reasons },
-    onContinue: () => form.submit(),
+    onContinue: () => {
+      // Highlight the form after user confirms
+      highlightPII(form, detected);
+      form.submit();
+    },
     onCancel: () => {},
+  });
+}
+
+/**
+ * Monitor for sent messages in chat interfaces (DM, comments, etc.)
+ */
+function monitorSentMessages(): void {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as Element;
+
+          // Check for newly sent messages in Instagram DMs
+          if (element.classList.contains('x9f619') ||
+              element.querySelector('.x9f619') !== null) {
+
+            // Check if this is a user-sent message
+            const messageContainer = element.closest('[class*="message"]');
+            if (messageContainer) {
+              // Look for sent message indicator (right-aligned usually)
+              const style = window.getComputedStyle(messageContainer);
+              const isSent = style.alignItems === 'flex-end' ||
+                             style.justifyContent === 'flex-end';
+
+              if (isSent) {
+                const text = element.textContent?.trim() || '';
+                if (text.length >= 10) { // Only check substantial messages
+                  const platform = detectPlatform(window.location.href);
+                  const detected = detectPII(text, {
+                    platform,
+                    isPublic: false,
+                    isDirectMessage: true,
+                  });
+
+                  if (detected.length > 0) {
+                    // Highlight the sent message
+                    setTimeout(() => {
+                      highlightPII(messageContainer as HTMLElement, detected);
+                    }, 100);
+                  }
+                }
+              }
+            }
+          }
+
+          // Check for submitted form inputs
+          const inputs = element.querySelectorAll('input, textarea');
+          inputs.forEach(input => {
+            if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+              const value = input.value.trim();
+              if (value.length >= 10) {
+                const platform = detectPlatform(window.location.href);
+                const detected = detectPII(value, {
+                  platform,
+                  isPublic: true,
+                  isDirectMessage: false,
+                });
+
+                if (detected.length > 0 && !input.hasAttribute('data-pii-checked')) {
+                  input.setAttribute('data-pii-checked', 'true');
+                  setTimeout(() => {
+                    highlightPII(input, detected);
+                  }, 100);
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
   });
 }
 
 function init(): void {
   document.addEventListener('submit', handleFormSubmit, true);
   scanAndAttach();
+  monitorSentMessages(); // NEW: Monitor for sent messages
   new MutationObserver(scanAndAttach).observe(
     document.body || document.documentElement,
     { childList: true, subtree: true }
