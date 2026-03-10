@@ -4,7 +4,7 @@
  */
 
 export interface PIIPattern {
-  type: 'location' | 'birthdate' | 'contact' | 'image' | 'address' | 'school' | 'financial' | 'identity';
+  type: 'location' | 'birthdate' | 'contact' | 'image' | 'address' | 'school' | 'financial' | 'identity' | 'name' | 'routine';
   regex: RegExp[];
   severity: 'low' | 'medium' | 'high';
   description: string;
@@ -26,6 +26,22 @@ export interface DetectedPII {
  * Optimized for social media platforms including Instagram
  */
 const PATTERNS: PIIPattern[] = [
+  // ── Full name sharing ─────────────────────────────────────────────────────
+  {
+    type: 'name',
+    regex: [
+      // "my name is Emma Thompson" / "I'm called Sarah Jones"
+      /\b(?:my\s+(?:full\s+)?name\s+is|i(?:'m|\s+am)\s+called|call\s+me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/gi,
+      // "I'm Emma Thompson" — first + last, both capitalised
+      /\bi(?:'m|\s+am)\s+([A-Z][a-z]{2,}\s+[A-Z][a-z]{2,})\b/gi,
+      // Introductions: "Hi, I'm Emma Thompson"
+      /\b(?:hi|hello|hey)[\s,!]+(?:i(?:'m|\s+am)|my\s+name\s+is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/gi,
+    ],
+    severity: 'high',
+    description: 'Full name',
+  },
+
+  // ── Birth date / age ──────────────────────────────────────────────────────
   {
     type: 'birthdate',
     regex: [
@@ -38,71 +54,111 @@ const PATTERNS: PIIPattern[] = [
       // Age expressions: "10 years old", "15 yo", "turning 16"
       /\b\d{1,2}\s+(years?\s+old|yo|age\s+old)\b/gi,
       /\b(turning|just\s+turned)\s+\d{1,2}\b/gi,
-      // Birthday expressions: "my birthday is..."
+      // Birthday expressions
       /\b(my\s+birthday|b-day|bday|born\s+(in|on))\s+(.){1,50}\b/gi,
-      // Grade level (US school system): "in 7th grade", "6th grader"
+      // Grade level: "in 7th grade", "6th grader"
       /\b(k|1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th|11th|12th)\s+(grader|grade)\b/gi,
+      // Age + gender combos: "14f", "13m", "16f here", "I'm a 13 year old girl"
+      /\b\d{1,2}\s*[fFmM]\b(?:\s+here)?/g,
+      /\bi(?:'m|\s+am)\s+a\s+\d{1,2}[- ]year[- ]old\s+(?:girl|boy|kid|teen|female|male)\b/gi,
+      // "im 14" — abbreviated age claim common in chats
+      /\bim\s+\d{1,2}\b/gi,
     ],
     severity: 'high',
-    description: 'Birth date or age information'
+    description: 'Birth date or age information',
   },
+
+  // ── Location ──────────────────────────────────────────────────────────────
   {
     type: 'location',
     regex: [
       // City, State: "in Springfield, IL"
-      /\bin\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?),\s*[A-Z]{2}\b/gi,
+      /\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),\s*[A-Z]{2}\b/gi,
       // Street addresses: "at 123 Main St"
       /\bat\s+\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/gi,
-      // Street addresses with "is": "my address is 123 Main St"
-      /\b(my\s+(address|location|home)|i\s+live)\s+(is|at)\s+\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/gi,
-      // School references: "my school is", "I go to"
-      /\b(my\s+school|I\s+go\s+to|I\s+attend)\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?)\b/gi,
-      // Location indicators: "live in", "from", "based in"
-      /\b(live\s+in|from|based\s+in|located\s+in|currently\s+in)\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?)\b/gi,
+      // School references: "I go to", "I attend"
+      /\b(my\s+school|I\s+go\s+to|I\s+attend)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/gi,
+      // Location indicators with longer minimum city name to reduce FP
+      /\b(live\s+in|currently\s+in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/gi,
+      /\b(from|based\s+in|located\s+in)\s+([A-Z][a-z]{3,}(?:\s+[A-Z][a-z]+)?)\b/gi,
       // GPS coordinates: "33.7490° N, 84.3880° W"
       /\b\d{1,3}\.\d+°?\s*[NS],\s*\d{1,3}\.\d+°?\s*[EW]\b/gi,
-      // Landmarks: "near the", "by the"
-      /\b(near|by|next\s+to|close\s+to)\s+the\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?)\b/gi,
+      // Real-time presence: "I'm at the mall", "just got to Central Park"
+      /\bi(?:'m|\s+am)\s+(?:at|inside)\s+(?:the\s+)?([A-Za-z][a-zA-Z\s]{2,30})\b/gi,
+      /\b(?:just\s+(?:got|arrived|got\s+to)|heading\s+to)\s+(?:the\s+)?([A-Z][a-zA-Z\s]{2,25})\b/gi,
+      /\b(?:meet\s+me\s+(?:at|in|by)|i'll\s+be\s+at)\s+(?:the\s+)?([A-Z][a-zA-Z\s]{2,30})\b/gi,
     ],
     severity: 'high',
-    description: 'Location information'
+    description: 'Location information',
   },
+
+  // ── Contact information ───────────────────────────────────────────────────
   {
     type: 'contact',
     regex: [
       // Phone numbers (US format): "123-456-7890", "(123) 456-7890", "123.456.7890"
-      /\b\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
-      // Bare 10-digit number (no separators): "1234567890"
-      /\b\d{10}\b/g,
-      // Obfuscated with spaces between digits: "1 2 3 4 5 6 7 8 9 0"
-      /\b\d(?:\s\d){9}\b/g,
+      /\b(?:\(\d{3}\)|\d{3})[-.]\d{3}[-.]\d{4}\b|\b\d{3}\s\d{3}\s\d{4}\b/g,
+      // Spaced-out digits: "1 2 3 4 5 6 7 8 9 0" — only with phone context words to reduce FP
+      /\b(?:my\s+(?:number|phone|cell|mobile)\s+is\s+)?\d(?:\s+\d){9}\b/gi,
       // Phone numbers (international): "+1 234 567 8900"
       /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/g,
       // Email addresses
-      /[\w\.-]+@[\w\.-]+\.\w{2,}/gi,
-      // Social media handles (cross-platform): "@username"
-      /@[\w]{1,30}/g,
-      // Contact info references: "my phone is", "text me at", "call me"
-      /\b(my\s+(phone|number|cell|mobile)|text\s+me|call\s+me|dm\s+me)\s+(is|at)?\s*\w+/gi,
-      // Discord: "username#1234"
-      /\b[\w]{2,32}#\d{4}\b/g,
+      /[\w.\-]+@[\w.\-]+\.\w{2,}/gi,
+      // Context-required @handle: "my snap is @xxx", "add me @xxx"
+      /\b(?:my\s+(?:snap(?:chat)?|ig|insta(?:gram)?|tiktok|twitter|discord|telegram|kik|handle|tag|username)\s+is|add\s+me|follow\s+me\s+at|reach\s+me\s+at|find\s+me\s+at|dm\s+me\s+at)\s+@?[\w.]{2,30}\b/gi,
+      // "my snapchat is xxx" / "my discord is xxx" — without @
+      /\b(?:my\s+(?:snap(?:chat)?|ig|insta(?:gram)?|tiktok|twitter|discord|telegram|kik)\s+(?:is|=|:))\s*[\w.]{2,30}\b/gi,
+      // Discord tag with context: "my discord is username#1234"
+      /\b(?:my\s+discord(?:\s+tag)?\s+(?:is|=|:))\s*[\w]{2,32}#\d{4}\b/gi,
+      // Contact info references: "my phone is", "text me at", "call me at"
+      /\b(?:my\s+(?:phone|number|cell|mobile)|text\s+me\s+at|call\s+me(?:\s+at)?|reach\s+me\s+at)\s*(?:is\s+|:?\s*)?[\d\s()\-+.]{7,}/gi,
+      // Context-gated bare 10-digit: phone context word before bare number
+      /\b(?:my\s+(?:number|phone|cell)|call\s+me|text\s+me)\s*[:=]?\s*\d{10}\b/gi,
+      // Parent/family contact: "my mom's number is", "dad's email is"
+      /\b(?:my\s+(?:mom(?:'s)?|dad(?:'s)?|parent(?:'s)?|guardian(?:'s)?)\s+(?:number|phone|email|cell)\s+is)\s+[\w\s@.+\-()]{5,}/gi,
     ],
     severity: 'high',
-    description: 'Contact information'
+    description: 'Contact information',
   },
+
+  // ── Daily routine / vulnerability indicators ──────────────────────────────
+  {
+    type: 'routine',
+    regex: [
+      // "home alone until 6pm" / "home by myself" / "parents aren't home"
+      /\b(?:home\s+alone|by\s+myself\s+(?:at\s+home|until|till)|no\s+one\s+(?:is\s+)?home|parents?\s+(?:aren'?t|not)\s+home|left\s+alone\s+at\s+home)\b/gi,
+      // Daily schedule: "I get home at 3", "I get out of school at 2:30"
+      /\b(?:i\s+get\s+home\s+at|i\s+get\s+out\s+(?:of\s+school\s+)?at|i\s+walk\s+home\s+at|i\s+leave\s+school\s+at)\s+\d/gi,
+      // "I walk alone to school" / "I walk home alone"
+      /\bi\s+walk\s+(?:alone\s+(?:to\s+school|home)|(?:to\s+school|home)\s+alone)\b/gi,
+      // "I take the bus at 7am"
+      /\b(?:i\s+(?:take|catch|ride)\s+the\s+bus\s+at)\s+\d/gi,
+      // "no one home until [time]"
+      /\b(?:no\s+one\s+(?:is\s+)?home|home\s+alone)\s+until\s+\d/gi,
+      // "I'll be alone at" / "I'll be home alone"
+      /\bi(?:'ll|\s+will)\s+be\s+(?:home\s+)?alone\b/gi,
+    ],
+    severity: 'high',
+    description: 'Daily routine or vulnerability indicator',
+  },
+
+  // ── Physical address ──────────────────────────────────────────────────────
   {
     type: 'address',
     regex: [
       // Full address: "123 Main St, Springfield, IL"
       /\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr)[\w\s,]*[A-Z]{2}\s*\d{5}/gi,
-      // ZIP codes: "12345", "12345-6789"
-      /\b\d{5}(-\d{4})?\b/g,
+      // ZIP codes: require context word — bare 5-digit numbers have too many false positives
+      /\b(?:zip(?:\s+code)?|postal\s+code)\s*[:=]?\s*\d{5}(-\d{4})?\b/gi,
+      /\b[A-Z]{2}\s+\d{5}\b/g,
       // Apartment numbers: "Apt 5", "Unit 12"
       /\b(apt|apartment|unit|suite|ste)\s+\d+[a-z]?\b/gi,
     ],
     severity: 'high',
-    description: 'Home address'
+    description: 'Home address',
   },
+
+  // ── School / team name ────────────────────────────────────────────────────
   {
     type: 'school',
     regex: [
@@ -118,14 +174,16 @@ const PATTERNS: PIIPattern[] = [
       /\bi\s+play\s+(?:on|for)\s+(?:the\s+)?[A-Z][a-zA-Z\s]{2,30}\b/gi,
     ],
     severity: 'medium',
-    description: 'School or team name'
+    description: 'School or team name',
   },
+
+  // ── Financial account numbers ─────────────────────────────────────────────
   {
     type: 'financial',
     regex: [
-      // SSN with dashes (XXX-XX-XXXX) — requires dashes to avoid false positives on bare numbers
+      // SSN with dashes (XXX-XX-XXXX) — requires dashes to avoid FP on bare numbers
       /\b(?!000|666|9\d{2})\d{3}-\d{2}-\d{4}\b/g,
-      // SSN with context clue (allows spaces or dashes)
+      // SSN with explicit context clue
       /\b(?:ssn|social\s+security(?:\s+(?:number|#|no\.?))?)\s*[:=]?\s*(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b/gi,
       // Visa: 4xxx-xxxx-xxxx-xxxx
       /\b4\d{3}[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
@@ -135,30 +193,31 @@ const PATTERNS: PIIPattern[] = [
       /\b3[47]\d{2}[-\s]\d{6}[-\s]\d{5}\b/g,
       // Discover: 6011 or 65xx
       /\b6(?:011|5\d{2})[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
-      // Generic 16-digit card with separators
+      // Generic 16-digit card with separators (requires dashes/spaces to avoid FP)
       /\b\d{4}[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
-      // Credit card with context clue (bare 16-digit number)
+      // Credit card with explicit context clue
       /\b(?:card\s+(?:number|#|no\.?)|credit\s+card|debit\s+card|cc\s*#?)\s*[:=]?\s*\d{13,19}\b/gi,
     ],
     severity: 'high',
-    description: 'Financial account number'
+    description: 'Financial account number',
   },
+
+  // ── Government identity documents ─────────────────────────────────────────
   {
     type: 'identity',
     regex: [
-      // US passport with context clue
+      // US passport — requires context clue
       /\b(?:passport(?:\s+(?:number|#|no\.?))?)\s*[:=]?\s*[A-Z]\d{8}\b/gi,
-      // Driver's license with context clue
+      // Driver's license — requires context clue
       /\b(?:driver'?s?\s+license(?:\s+(?:number|#|no\.?))?|dl\s*#?)\s*[:=]?\s*[A-Z0-9]{5,15}\b/gi,
-      // License plate with context clue
-      /\b(?:license\s+plate|plate\s+(?:number|#|no\.?))\s*[:=]?\s*[A-Z0-9]{2,8}\b/gi,
-      // Standard US license plate patterns (e.g. ABC-1234, 123-ABC, AB-12345)
-      /\b[A-Z]{1,3}[-\s]\d{3,4}[-\s]?[A-Z]{0,3}\b/g,
+      // License plate — requires explicit context (removed bare plate pattern to reduce FP)
+      /\b(?:(?:my\s+)?(?:license\s+plate|plate\s+(?:number|#|no\.?)|car\s+plate)\s*[:=]?\s*)[A-Z0-9]{2,8}\b/gi,
     ],
     severity: 'high',
-    description: 'Government ID or license plate'
+    description: 'Government ID or license plate',
   },
 ];
+
 
 /**
  * Platform-specific detection contexts
@@ -260,7 +319,9 @@ export function calculatePIIRiskScore(detectedPII: DetectedPII[]): number {
 
   for (const pii of detectedPII) {
     const severityMultiplier = pii.severity === 'high' ? 30 : pii.severity === 'medium' ? 15 : 5;
-    score += severityMultiplier;
+    // name and routine are especially dangerous for kids — bump their weight
+    const typeBonus = (pii.type === 'name' || pii.type === 'routine') ? 10 : 0;
+    score += severityMultiplier + typeBonus;
   }
 
   // Multiple PII items increase risk exponentially
@@ -279,8 +340,9 @@ export function calculatePIIRiskScore(detectedPII: DetectedPII[]): number {
 export function hasHighRiskCombinations(detectedPII: DetectedPII[]): boolean {
   const types = new Set(detectedPII.map(pii => pii.type));
 
-  // High-risk combinations
+  // High-risk combinations (any two of these pairs together = elevated risk)
   const dangerousCombos = [
+    // Original combos
     ['birthdate', 'location'],
     ['birthdate', 'school'],
     ['contact', 'location'],
@@ -290,6 +352,17 @@ export function hasHighRiskCombinations(detectedPII: DetectedPII[]): boolean {
     ['financial', 'address'],
     ['identity', 'birthdate'],
     ['identity', 'location'],
+    // New combos involving name, routine
+    ['name', 'location'],
+    ['name', 'contact'],
+    ['name', 'school'],
+    ['name', 'birthdate'],
+    ['routine', 'contact'],
+    ['routine', 'location'],
+    ['routine', 'name'],
+    ['identity', 'contact'],
+    ['identity', 'address'],
+    ['birthdate', 'contact'],
   ];
 
   return dangerousCombos.some(combo =>

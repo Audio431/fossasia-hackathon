@@ -117,6 +117,96 @@ describe('PII Detector', () => {
       expect(detected.some(d => d.type === 'identity')).toBe(true);
     });
 
+    // ── New pattern tests ────────────────────────────────────────────────────
+
+    it('should detect full name sharing', () => {
+      const cases = [
+        'my name is Emma Thompson',
+        "I'm Sarah Johnson",
+        'call me Tyler Williams',
+      ];
+      for (const text of cases) {
+        const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+        const nameHits = detected.filter(d => d.type === 'name');
+        expect(nameHits.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should detect age+gender shorthand (14f, 13m)', () => {
+      const cases = [
+        '14f here',
+        "I'm a 13 year old girl",
+        'im 14 f',
+      ];
+      for (const text of cases) {
+        const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+        const ageHits = detected.filter(d => d.type === 'birthdate');
+        expect(ageHits.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should detect vulnerability / routine disclosure', () => {
+      const cases = [
+        'home alone until 6pm',
+        'I walk alone to school',
+        "parents aren't home",
+        'I get home at 3',
+      ];
+      for (const text of cases) {
+        const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+        const routineHits = detected.filter(d => d.type === 'routine');
+        expect(routineHits.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should detect username / handle sharing', () => {
+      const cases = [
+        'my snapchat is emmaT2009',
+        'add me on tiktok as emma_t',
+        'my discord is Emma#1234',
+        'my instagram is @emma.t',
+      ];
+      for (const text of cases) {
+        const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+        const contactHits = detected.filter(d => d.type === 'contact');
+        expect(contactHits.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should detect real-time location disclosure', () => {
+      const cases = [
+        "I'm at the mall right now",
+        'just got to Central Park',
+        'meet me at Riverside Middle School',
+      ];
+      for (const text of cases) {
+        const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+        const locHits = detected.filter(d => d.type === 'location');
+        expect(locHits.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should NOT flag bare 10-digit numbers as phone', () => {
+      const text = 'order id 1234567890 shipped';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+      const phoneHits = detected.filter(d => d.matchedText === '1234567890');
+      expect(phoneHits.length).toBe(0);
+    });
+
+    it('should NOT flag bare ZIP-like numbers as address', () => {
+      const text = 'score was 90210 today';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+      const addrHits = detected.filter(d => d.type === 'address' && d.matchedText === '90210');
+      expect(addrHits.length).toBe(0);
+    });
+
+    it('should NOT flag standalone @mentions as contact', () => {
+      const text = '@everyone check this out, @MrSmith said to meet tomorrow';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+      const contactHits = detected.filter(d => d.type === 'contact');
+      expect(contactHits.length).toBe(0);
+    });
+
     it('should not detect false positives', () => {
       const text = 'Hello world, how are you?';
       const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
@@ -189,6 +279,22 @@ describe('PII Detector', () => {
         { type: 'address', severity: 'high', description: 'Address', matchedText: '123 Main St', position: { start: 20, end: 31 } }
       ] as DetectedPII[];
 
+      expect(hasHighRiskCombinations(detected)).toBe(true);
+    });
+
+    it('should detect name + location combination', () => {
+      const detected = [
+        { type: 'name', severity: 'high', description: 'Full name', matchedText: 'Emma Thompson', position: { start: 0, end: 13 } },
+        { type: 'location', severity: 'high', description: 'Location', matchedText: 'Springfield, IL', position: { start: 14, end: 29 } }
+      ] as DetectedPII[];
+      expect(hasHighRiskCombinations(detected)).toBe(true);
+    });
+
+    it('should detect routine + contact combination', () => {
+      const detected = [
+        { type: 'routine', severity: 'high', description: 'Vulnerability', matchedText: 'home alone until 6pm', position: { start: 0, end: 20 } },
+        { type: 'contact', severity: 'high', description: 'Phone', matchedText: '123-456-7890', position: { start: 21, end: 33 } }
+      ] as DetectedPII[];
       expect(hasHighRiskCombinations(detected)).toBe(true);
     });
 
