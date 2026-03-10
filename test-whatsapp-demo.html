@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Shadow - WhatsApp Parent Alerts</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 48px;
+    }
+
+    .header h1 {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .header p {
+      font-size: 20px;
+      opacity: 0.95;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      padding: 32px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    }
+
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: #666;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .demo-section {
+      background: white;
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+      margin-bottom: 32px;
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .demo-header h2 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+
+    .demo-badge {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .test-area {
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .test-area label {
+      display: block;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f5f3ff;
+    }
+
+    .whatsapp-preview {
+      background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+      border: 2px solid #22c55e;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .whatsapp-preview h3 {
+      color: #166534;
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .message-bubble {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+
+    .status {
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 20px;
+      font-weight: 600;
+      display: none;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .scenarios {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 32px;
+    }
+
+    .scenario-card {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+
+    .scenario-card strong {
+      color: #1a1a1a;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .scenario-card p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ Privacy Shadow</h1>
+      <p>WhatsApp Parent Alerts — Real-time notifications for online safety</p>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Instant Alerts</h3>
+        <p>Parents receive WhatsApp notifications the moment their child shares PII on social media platforms</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Smart Detection</h3>
+        <p>AI-powered detection catches addresses, phone numbers, emails, SSNs, and other sensitive information</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Rate Limited</h3>
+        <p>Prevents spam with configurable rate limits (max 5/hour) and respects quiet hours</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>Multi-Platform</h3>
+        <p>Works seamlessly across Instagram, Twitter, Facebook, TikTok, and more</p>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-header">
+        <h2>🧪 Live Demo</h2>
+        <span class="demo-badge">Interactive</span>
+      </div>
+
+      <div class="test-area">
+        <label>Type a message to test PII detection:</label>
+        <textarea id="test-input" placeholder="Try typing: my address is 123 main street"></textarea>
+
+        <div class="button-group">
+          <button class="btn-primary" onclick="simulateHighAlert()">Test High Alert</button>
+          <button class="btn-primary" onclick="simulateCriticalAlert()">Test Critical Alert</button>
+          <button class="btn-secondary" onclick="openConsole()">🔍 Open Console</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </div>
+
+      <div id="whatsapp-preview" class="whatsapp-preview" style="display: none;">
+        <h3>📱 WhatsApp Message Preview</h3>
+        <div class="message-bubble" id="message-bubble"></div>
+      </div>
+
+      <div class="scenarios">
+        <div class="scenario-card">
+          <strong>📍 Address Sharing</strong>
+          <p>Child: "my address is 123 main street"<br/>→ Parent alerted immediately</p>
+        </div>
+        <div class="scenario-card">
+          <strong>📞 Phone Number</strong>
+          <p>Child: "call me at 555-123-4567"<br/>→ WhatsApp notification sent</p>
+        </div>
+        <div class="scenario-card">
+          <strong>💬 Safe Message</strong>
+          <p>Child: "hey whats up"<br/>→ No alert (correctly safe)</p>
+        </div>
+        <div class="scenario-card">
+          <strong>⚡ Rate Limiting</strong>
+          <p>Multiple detections → Limited to 5/hour<br/>→ Prevents spam effectively</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function simulateAlert(level) {
+      const input = document.getElementById('test-input');
+      const status = document.getElementById('status');
+      const preview = document.getElementById('whatsapp-preview');
+      const bubble = document.getElementById('message-bubble');
+
+      const testMessage = input.value || 'my address is 123 main street springfield illinois';
+      const piiType = level === 'critical' ? 'Address, Location, SSN' : 'Address, Location';
+      const emoji = level === 'critical' ? '🚨' : '⚠️';
+
+      const whatsappMsg = `🛡️ ${emoji} Privacy Shadow Alert
+
+Your child just shared sensitive information on Instagram:
+
+📍 What was detected: ${piiType}
+⚠️ Risk level: ${level.toUpperCase()}
+
+💬 Message: "${testMessage.substring(0, 100)}${testMessage.length > 100 ? '...' : ''}"
+
+🕐 ${new Date().toLocaleTimeString()}
+
+Talk to your child about online safety. This alert was sent by Privacy Shadow browser extension.`;
+
+      bubble.textContent = whatsappMsg;
+      preview.style.display = 'block';
+
+      status.textContent = `✅ ${level.toUpperCase()} alert sent! Check browser console (F12) for details`;
+      status.className = 'status show success';
+
+      console.log('%c📱 WhatsApp Alert Sent!', 'color: #22c55e; font-size: 16px; font-weight: bold;');
+      console.log('─'.repeat(60));
+      console.log('To: +1 234 567 8900');
+      console.log(whatsappMsg);
+      console.log('─'.repeat(60));
+    }
+
+    function simulateHighAlert() {
+      simulateAlert('high');
+    }
+
+    function simulateCriticalAlert() {
+      simulateAlert('critical');
+    }
+
+    function openConsole() {
+      alert('🔍 Developer Console\n\nPress Ctrl+Shift+J (Windows/Linux) or Cmd+Option+J (Mac) to open the console and see the WhatsApp message logs.');
+    }
+
+    // Auto-detect blur
+    const textarea = document.getElementById('test-input');
+    textarea.addEventListener('blur', function() {
+      if (this.value.length > 15) {
+        const hasAddress = /address|street|road/i.test(this.value);
+        if (hasAddress) {
+          simulateAlert('high');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

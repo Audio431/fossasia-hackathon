@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhatsApp Manual Test</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; background: #f3f4f6; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1 { color: #111827; margin-bottom: 10px; }
+    .subtitle { color: #6b7280; margin-bottom: 30px; }
+    textarea { width: 100%; height: 100px; padding: 15px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; font-family: inherit; margin-bottom: 15px; }
+    button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-right: 10px; }
+    button:hover { background: #2563eb; }
+    button.secondary { background: #6b7280; }
+    button.secondary:hover { background: #4b5563; }
+    .console { background: #1f2937; color: #f3f4f6; padding: 20px; border-radius: 8px; margin-top: 20px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; max-height: 400px; overflow-y: auto; }
+    .console-entry { margin: 5px 0; padding: 5px 0; border-bottom: 1px solid #374151; }
+    .console-entry.whatsapp { color: #34d399; font-weight: bold; }
+    .console-entry.error { color: #f87171; }
+    .status { padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: 600; display: none; }
+    .status.show { display: block; }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.info { background: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 WhatsApp Parent Alert - Manual Test</h1>
+    <p class="subtitle">Test the WhatsApp notification feature for Privacy Shadow</p>
+
+    <div class="status success" id="success-status" style="display: none;"></div>
+    <div class="status info" id="info-status"></div>
+
+    <div>
+      <label style="font-weight: 600; color: #111827; display: block; margin-bottom: 8px;">
+        Type PII and click outside (blur):
+      </label>
+      <textarea id="test-input" placeholder="Type: my address is 123 main street"></textarea>
+
+      <div>
+        <button onclick="testHighAlert()">Test High Alert</button>
+        <button onclick="testCriticalAlert()">Test Critical Alert</button>
+        <button onclick="clearConsole()" class="secondary">Clear Console</button>
+      </div>
+    </div>
+
+    <div class="console" id="console-output"></div>
+  </div>
+
+  <script>
+    // Intercept console.log
+    const originalLog = console.log;
+    const consoleDiv = document.getElementById('console-output');
+
+    console.log = function(...args) {
+      originalLog(...args);
+
+      const message = args.join(' ');
+      const entry = document.createElement('div');
+      entry.className = 'console-entry';
+
+      if (message.includes('WhatsApp') || message.includes('📱')) {
+        entry.classList.add('whatsapp');
+      }
+
+      entry.textContent = message;
+      consoleDiv.appendChild(entry);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    };
+
+    function showInfo(message) {
+      const status = document.getElementById('info-status');
+      status.textContent = message;
+      status.className = 'status show info';
+    }
+
+    function showSuccess(message) {
+      const status = document.getElementById('success-status');
+      status.textContent = message;
+      status.className = 'status show success';
+      setTimeout(() => status.style.display = 'none', 3000);
+    }
+
+    async function testHighAlert() {
+      const input = document.getElementById('test-input');
+      input.value = 'my address is 123 main street springfield illinois';
+
+      showInfo('Testing high alert... Type and blur the textarea');
+
+      // Wait and blur
+      await new Promise(r => setTimeout(r, 500));
+      input.blur();
+      input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      await new Promise(r => setTimeout(r, 2000));
+      showSuccess('High alert test completed! Check console for WhatsApp message.');
+    }
+
+    async function testCriticalAlert() {
+      const input = document.getElementById('test-input');
+      input.value = 'my ssn is 123-45-6789 and my phone is 555-123-4567';
+
+      showInfo('Testing critical alert... Type and blur the textarea');
+
+      // Wait and blur
+      await new Promise(r => setTimeout(r, 500));
+      input.blur();
+      input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      await new Promise(r => setTimeout(r, 2000));
+      showSuccess('Critical alert test completed! Check console for WhatsApp message.');
+    }
+
+    function clearConsole() {
+      consoleDiv.innerHTML = '';
+    }
+
+    // Auto-monitor textarea
+    const textarea = document.getElementById('test-input');
+    textarea.addEventListener('blur', async () => {
+      await new Promise(r => setTimeout(r, 500));
+
+      const hasPII = /address|street|ssn|phone|email/i.test(textarea.value);
+      if (hasPII && textarea.value.length > 10) {
+        showSuccess('PII detected! Check console for WhatsApp notification.');
+      }
+    });
+
+    // Initial message
+    showInfo('Ready to test. Type PII in the textarea and blur, or use the test buttons.');
+  </script>
+</body>
+</html>

@@ -8,6 +8,7 @@
 
 import { detectStrangerRisk } from '../detection/stranger-detector';
 import { loadSettings } from '../utils/settings';
+import { notifyParentViaWhatsApp } from '../utils/whatsapp-notifier';
 
 /**
  * Check if extension context is still valid
@@ -198,6 +199,19 @@ function attachMonitor(el: Element): void {
         const risk = detectStrangerRisk(conversationBuffer);
         if (risk.level === 'warning' || risk.level === 'danger') {
           showStrangerWarning(risk.flags);
+
+          // Send WhatsApp alert to parent about stranger risk
+          const platform = new URL(window.location.href).hostname.replace('www.', '');
+          const riskLevel = risk.level === 'danger' ? 'critical' : 'high';
+
+          notifyParentViaWhatsApp(
+            platform,
+            ['Stranger Danger', ...risk.flags],
+            riskLevel,
+            `Suspicious conversation detected: ${risk.flags.slice(0, 3).join(', ')}`,
+          ).catch((error) => {
+            console.error('WhatsApp notification failed:', error);
+          });
 
           safeSendMessage({
             type: 'STRANGER_RISK_DETECTED',

@@ -26,16 +26,16 @@ export interface RiskAssessment {
 }
 
 /**
- * Platform trust scores (lower = higher risk)
+ * Platform trust scores (lower = higher risk for kids)
  */
 const PLATFORM_TRUST_SCORES: Record<string, number> = {
-  'instagram': 0.6, // Moderate risk - public posts, large user base
-  'twitter': 0.5, // Higher risk - very public
-  'facebook': 0.7, // Moderate - some privacy controls
-  'tiktok': 0.4, // Higher risk - young user base
-  'youtube': 0.6, // Moderate - comments can be public
-  'discord': 0.8, // Lower risk - typically private servers
-  'generic': 0.5, // Default moderate risk
+  'instagram': 0.5, // High risk — public posts, large user base including strangers
+  'twitter': 0.4,   // Higher risk — very public by default
+  'facebook': 0.6,  // Moderate — some privacy controls
+  'tiktok': 0.3,    // Highest risk — dominant platform for predatory contact with minors
+  'youtube': 0.5,   // Moderate — public comments, DM capability
+  'discord': 0.3,   // Highest risk — anonymous servers, known for grooming targeting minors
+  'generic': 0.5,   // Default moderate risk
 };
 
 /**
@@ -58,13 +58,26 @@ export function calculateRisk(
   const piiScore = calculatePIIRiskScore(piiDetected);
   score += piiScore;
 
-  // Add reasons for each PII type
-  const piiTypes = new Set(piiDetected.map(pii => pii.description));
-  piiTypes.forEach(type => {
-    if (!reasons.includes(type)) {
-      reasons.push(type);
+  // Add reasons and type-specific recommendations for each PII type
+  const TYPE_RECOMMENDATIONS: Record<string, string> = {
+    name:       '👤 Never share your full name with people you meet online',
+    routine:    '🕐 Don\'t tell strangers when you\'re home alone or your daily schedule',
+    birthdate:  '🎂 Avoid sharing your birthday or exact age online',
+    location:   '📍 Don\'t share your current location or address',
+    contact:    '📞 Only share your contact info with people you already know in real life',
+    address:    '🏠 Your home address should stay private — never share it online',
+    school:     '🏫 Avoid naming your school in public posts',
+    financial:  '💳 Never share financial information online',
+    identity:   '🪪 Government ID numbers should never be shared online',
+  };
+  const seenTypes = new Set<string>();
+  for (const pii of piiDetected) {
+    if (!reasons.includes(pii.description)) reasons.push(pii.description);
+    if (!seenTypes.has(pii.type) && TYPE_RECOMMENDATIONS[pii.type]) {
+      recommendations.push(TYPE_RECOMMENDATIONS[pii.type]);
+      seenTypes.add(pii.type);
     }
-  });
+  }
 
   // 2. Stranger probability multiplier
   if (strangerProbability > 0.7) {

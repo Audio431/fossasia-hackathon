@@ -96,6 +96,15 @@ const TEST_PAGE = `
         status.className = 'status error';
         console.log('❌ Status updated to FAIL');
       }
+
+      // Final check - look for overlay in entire document
+      setTimeout(() => {
+        const finalCheck = document.getElementById('privacy-shadow-overlay');
+        console.log('🔍 FINAL CHECK after 1 second:', finalCheck ? 'EXISTS' : 'MISSING');
+        if (finalCheck) {
+          console.log('🔍 FINAL CHECK visible:', finalCheck.getBoundingClientRect().width > 0);
+        }
+      }, 1000);
     }
 
     // Auto-run test after extension loads

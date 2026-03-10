@@ -4,9 +4,31 @@
  */
 
 import type { PlasmoCSConfig } from "plasmo";
-import { detectPII } from '../detection/pii-detector';
+import { detectPII, calculatePIIRiskScore, hasHighRiskCombinations } from '../detection/pii-detector';
 import { showPrivacyAlert } from '../utils/alert-overlay';
 import { loadSettings, isQuietHours, SENSITIVITY_THRESHOLDS } from '../utils/settings';
+import { notifyParentViaWhatsApp } from '../utils/whatsapp-notifier';
+
+
+/**
+ * Compute a proper PII risk score using severity weights and combo bonuses.
+ * This replaces the naive `detected.length * 30` estimate.
+ */
+function computeRiskScore(detected: ReturnType<typeof detectPII>): number {
+  let score = calculatePIIRiskScore(detected);
+  if (hasHighRiskCombinations(detected)) score = Math.min(score + 25, 100);
+  return Math.min(score, 100);
+}
+
+/**
+ * Build human-readable reason strings from detected PII, deduped and sorted
+ * by severity so the most critical items appear first.
+ */
+function buildReasons(detected: ReturnType<typeof detectPII>): string[] {
+  const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const sorted = [...detected].sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+  return [...new Set(sorted.map(p => p.description))];
+}
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"],
@@ -105,23 +127,9 @@ function attachInputMonitor(el: Element): void {
         ? el.value
         : (el as HTMLElement).innerText || '';
 
-      console.log('🔍 Privacy Shadow [form-monitor]: Blur triggered!', {
-        value: value.substring(0, 50),
-        length: value.length
-      });
-
-      if (value === lastChecked || value.length < 5) {
-        console.log('⏭️ Skipped: value === lastChecked or too short');
-        return;
-      }
-      if (value === acknowledgedValue) {
-        console.log('⏭️ Skipped: Already acknowledged');
-        return;
-      }
-      if (value.length < 10) {
-        console.log('⏭️ Skipped: Less than 10 characters');
-        return;
-      }
+      if (value === lastChecked || value.length < 5) return;
+      if (value === acknowledgedValue) return;
+      if (value.length < 10) return;
 
       lastChecked = value;
 
@@ -132,44 +140,20 @@ function attachInputMonitor(el: Element): void {
         isDirectMessage: window.location.href.includes('/messages/') || window.location.href.includes('/dm/'),
       });
 
-      console.log('🔍 PII Detection:', {
-        detected: detected.length,
-        types: detected.map(p => p.type)
-      });
-
-      if (detected.length === 0) {
-        console.log('⏭️ No PII detected');
-        return;
-      }
+      if (detected.length === 0) return;
 
       // Check settings: enabled flag, quiet hours, sensitivity threshold
       const settings = await loadSettings();
-      console.log('⚙️ Settings:', {
-        enabled: settings.enabled,
-        quietHours: isQuietHours(settings),
-        sensitivity: settings.sensitivity
-      });
 
-      if (settings.enabled === false) {
-        console.log('⏭️ Extension disabled in settings');
-        return;
-      }
-      if (isQuietHours(settings)) {
-        console.log('⏭️ Quiet hours active');
-        return;
-      }
+      if (settings.enabled === false) return;
+      if (isQuietHours(settings)) return;
 
       const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];
-      const score = Math.min(detected.length * 30, 100);
+      const score = computeRiskScore(detected);
+      if (score < threshold) return;
 
-      const reasons = [...new Set(detected.map(p => p.description))];
-      const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
-
-      console.log('🚨 SHOWING ALERT:', {
-        score,
-        level,
-        reasons
-      });
+      const reasons = buildReasons(detected);
+      const level: string = score >= 70 ? 'critical' : score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
 
       safeSendMessage({
         type: 'FORM_SUBMISSION',
@@ -182,7 +166,6 @@ function attachInputMonitor(el: Element): void {
           // User acknowledged the risk - remember this value
           acknowledgedValue = value;
           lastChecked = value;
-          console.log('✅ User clicked Send Anyway');
         },
         onCancel: () => {
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
@@ -194,8 +177,17 @@ function attachInputMonitor(el: Element): void {
           }
           lastChecked = '';
           acknowledgedValue = '';
-          console.log('❌ User clicked Nevermind');
         },
+      });
+
+      // Send WhatsApp alert to parent (non-blocking)
+      notifyParentViaWhatsApp(
+        platform,
+        detected.map(p => p.type),
+        level,
+        value,
+      ).catch((error) => {
+        console.error('WhatsApp notification failed:', error);
       });
     }, 300); // Short delay on blur to prevent immediate popup
   }, true); // Use capture phase to catch blur before other handlers
@@ -352,9 +344,9 @@ async function handleFormSubmit(event: Event): Promise<void> {
   event.preventDefault();
   event.stopImmediatePropagation();
 
-  const reasons = [...new Set(detected.map(p => p.description))];
-  const score = Math.min(detected.length * 30, 100);
-  const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
+  const score = computeRiskScore(detected);
+  const reasons = buildReasons(detected);
+  const level: string = score >= 70 ? 'critical' : score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
 
   showPrivacyAlert({
     risk: { level, score, reasons },

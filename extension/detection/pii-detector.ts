@@ -76,6 +76,8 @@ const PATTERNS: PIIPattern[] = [
       /\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),\s*[A-Z]{2}\b/gi,
       // Street addresses: "at 123 Main St"
       /\bat\s+\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/gi,
+      // Address statements: "my address is 123 Main St", "I live at 123 Main St"
+      /\b(my\s+(address|location|home)|i\s+live)\s+(is|at)\s+\d+\s+[\w\s]+(?:st|ave|avenue|street|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|pl|place)\b/gi,
       // School references: "I go to", "I attend"
       /\b(my\s+school|I\s+go\s+to|I\s+attend)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/gi,
       // Location indicators with longer minimum city name to reduce FP

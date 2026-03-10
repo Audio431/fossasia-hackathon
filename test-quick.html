@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Quick Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 32px;
+      font-size: 16px;
+    }
+
+    .step {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .step-number {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: bold;
+      margin-right: 12px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .step-content {
+      color: #666;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .step-content code {
+      background: #e5e7eb;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 24px;
+      display: none;
+    }
+
+    .success.show {
+      display: block;
+    }
+
+    .console-output {
+      background: #1f2937;
+      color: #f3f4f6;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .console-output.show {
+      display: block;
+    }
+
+    .console-output pre {
+      white-space: pre-wrap;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 WhatsApp Quick Test</h1>
+    <p class="subtitle">Test the WhatsApp parent alert feature in 3 simple steps</p>
+
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">1</span>
+        Load Extension
+      </div>
+      <div class="step-content">
+        Open Chrome and go to <code>chrome://extensions/</code><br>
+        Enable "Developer mode" → Click "Load unpacked"<br>
+        Select: <code>/Users/nat/privacy-shadow/build/chrome-mv3-prod</code>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">2</span>
+        Test PII Detection
+      </div>
+      <div class="step-content">
+        Type <code>my address is 123 main street</code> in any social media DM<br>
+        Click outside the textarea (blur)<br>
+        Alert appears to child ✅
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">3</span>
+        Check Console
+      </div>
+      <div class="step-content">
+        Open browser console (F12 or Cmd+Option+J)<br>
+        Look for: <code>📱 WhatsApp Alert (Demo Mode)</code><br>
+        This is the message that would be sent to parent!
+      </div>
+    </div>
+
+    <button onclick="simulateWhatsAppTest()">
+      🧪 Simulate WhatsApp Test Now
+    </button>
+
+    <div id="success" class="success">
+      ✅ Test complete! Check your browser console (F12) to see the WhatsApp message
+    </div>
+
+    <div id="console" class="console-output">
+      <pre id="console-content"></pre>
+    </div>
+  </div>
+
+  <script>
+    function simulateWhatsAppTest() {
+      const whatsappMsg = `🛡️ ⚠️ Privacy Shadow Alert
+
+Your child just shared sensitive information on Instagram:
+
+📍 What was detected: Address, Location
+⚠️ Risk level: HIGH
+
+💬 Message: "my address is 123 main street springfield illinois"
+
+🕐 ${new Date().toLocaleTimeString()}
+
+Talk to your child about online safety. This alert was sent by Privacy Shadow browser extension.`;
+
+      // Log to console (this is what the extension does)
+      console.log('📱 WhatsApp Alert (Demo Mode):');
+      console.log('─'.repeat(60));
+      console.log('To: +1 234 567 8900');
+      console.log(whatsappMsg);
+      console.log('─'.repeat(60));
+      console.log('%c✅ WhatsApp alert sent successfully!', 'color: #22c55e; font-weight: bold; font-size: 14px;');
+
+      // Show success message
+      document.getElementById('success').classList.add('show');
+
+      // Show in page
+      document.getElementById('console-content').textContent =
+        '📱 WhatsApp Alert (Demo Mode):\n' +
+        '─'.repeat(60) + '\n' +
+        'To: +1 234 567 8900\n' +
+        whatsappMsg + '\n' +
+        '─'.repeat(60) + '\n' +
+        '✅ WhatsApp alert sent successfully!';
+
+      document.getElementById('console').classList.add('show');
+
+      // Auto-open console hint
+      setTimeout(() => {
+        alert('💡 Tip: Press F12 or Cmd+Option+J to open the browser console and see more details!');
+      }, 500);
+    }
+  </script>
+</body>
+</html>

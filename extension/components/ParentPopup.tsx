@@ -179,12 +179,24 @@ export default function ParentPopup({ onDismiss, onViewFullDashboard, onSubmitFe
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t p-4 shrink-0">
+      <footer className="bg-white border-t p-4 shrink-0 space-y-2">
         <button
           onClick={onViewFullDashboard}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors"
         >
           View Full Dashboard
+        </button>
+        <button
+          onClick={() => {
+            // Open WhatsApp settings in a new tab
+            chrome.tabs.create({
+              url: chrome.runtime.getURL('tabs/parent-settings.html')
+            });
+          }}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <span>📱</span>
+          <span>WhatsApp Settings</span>
         </button>
         <p className="text-xs text-gray-500 text-center mt-2">
           Alerts are stored locally on your device

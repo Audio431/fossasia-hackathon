@@ -12,6 +12,17 @@ export interface QuietHours {
   end: string;
 }
 
+export interface WhatsAppSettings {
+  /** Parent's WhatsApp phone number (E.164 format: +1234567890) */
+  phoneNumber: string;
+  /** Enable WhatsApp alerts */
+  enabled: boolean;
+  /** Minimum risk level to trigger WhatsApp alert */
+  minAlertLevel: 'high' | 'critical';
+  /** Rate limiting: max alerts per hour */
+  maxAlertsPerHour: number;
+}
+
 export interface PrivacyShadowSettings {
   /** Master kill-switch — when false all monitoring is paused */
   enabled: boolean;
@@ -19,8 +30,10 @@ export interface PrivacyShadowSettings {
   quietHours: QuietHours;
   /** Show educational tip in alert overlay */
   showTips: boolean;
-  /** Notify parent (future: email) when critical PII is detected */
+  /** Notify parent when critical PII is detected */
   notifyParent: boolean;
+  /** WhatsApp notification settings */
+  whatsapp: WhatsAppSettings;
 }
 
 export const DEFAULT_SETTINGS: PrivacyShadowSettings = {
@@ -33,6 +46,12 @@ export const DEFAULT_SETTINGS: PrivacyShadowSettings = {
   },
   showTips: true,
   notifyParent: false,
+  whatsapp: {
+    phoneNumber: '',
+    enabled: false,
+    minAlertLevel: 'high',
+    maxAlertsPerHour: 5,
+  },
 };
 
 /**
