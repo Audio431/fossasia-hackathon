@@ -48,8 +48,10 @@ function attachInputMonitor(el: Element): void {
 
   let timer: ReturnType<typeof setTimeout>;
   let lastChecked = '';
+  let lastWarnedValue = '';
 
-  el.addEventListener('input', async () => {
+  // Only check on BLUR (when user leaves the field), not while typing
+  el.addEventListener('blur', async () => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
@@ -57,6 +59,9 @@ function attachInputMonitor(el: Element): void {
         : (el as HTMLElement).innerText || '';
 
       if (value === lastChecked || value.length < 5) return;
+      if (value === lastWarnedValue) return; // Don't warn again for same value
+      if (value.length < 10) return; // Require at least 10 characters
+
       lastChecked = value;
 
       const platform = detectPlatform(window.location.href);
@@ -84,9 +89,14 @@ function attachInputMonitor(el: Element): void {
         data: { pii: detected, context: { platform, isPublic: true, isDirectMessage: false, formType: 'realtime' }, formId: (el as HTMLElement).id || '' }
       }).catch(() => {});
 
+      lastWarnedValue = value; // Remember we warned about this value
+
       showPrivacyAlert({
         risk: { level, score, reasons, detectedTypes: detected.map(p => p.type) },
-        onContinue: () => { lastChecked = value; },
+        onContinue: () => {
+          lastChecked = value;
+          // Don't clear lastWarnedValue on continue - user acknowledged the risk
+        },
         onCancel: () => {
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
             el.value = '';
@@ -96,10 +106,16 @@ function attachInputMonitor(el: Element): void {
             (el as HTMLElement).focus();
           }
           lastChecked = '';
+          lastWarnedValue = '';
         },
       });
-    }, 600);
-  });
+    }, 300); // Short delay on blur to prevent immediate popup
+  }, true); // Use capture phase to catch blur before other handlers
+
+  // Store value on focus to detect if it changed
+  el.addEventListener('focus', () => {
+    clearTimeout(timer);
+  }, true);
 }
 
 function scanAndAttach(): void {
