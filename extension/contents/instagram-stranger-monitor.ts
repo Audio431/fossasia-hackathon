@@ -44,6 +44,8 @@ class InstagramStrangerMonitor {
   private acknowledgedThreads: Set<string> = new Set();
   private alertContainer: HTMLDivElement | null = null;
   private currentThreadId: string | null = null;
+  private activeAlertThread: string | null = null;
+  private debounceTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     this.detector = strangerModel;
@@ -129,10 +131,28 @@ class InstagramStrangerMonitor {
       this.analyzeCurrentDMThread();
     }
 
+    let lastPathname = window.location.pathname;
+
     // Observe navigation changes
     const observer = new MutationObserver(() => {
-      if (window.location.pathname.startsWith('/direct/t/')) {
-        this.analyzeCurrentDMThread();
+      const currentPathname = window.location.pathname;
+
+      // Check if user navigated to a different thread
+      if (currentPathname !== lastPathname) {
+        lastPathname = currentPathname;
+
+        // Clear active alert when switching threads
+        if (this.activeAlertThread) {
+          this.activeAlertThread = null;
+          if (this.alertContainer && this.alertContainer.parentNode) {
+            this.alertContainer.remove();
+            this.alertContainer = null;
+          }
+        }
+
+        if (currentPathname.startsWith('/direct/t/')) {
+          this.analyzeCurrentDMThread();
+        }
       }
     });
 
@@ -485,12 +505,25 @@ class InstagramStrangerMonitor {
     profile: InstagramProfile,
     messages: InstagramMessage[]
   ): void {
-    // Create container for alert
-    if (!this.alertContainer) {
-      this.alertContainer = document.createElement('div');
-      this.alertContainer.id = 'privacy-shadow-alert-container';
-      document.body.appendChild(this.alertContainer);
+    // Don't show if alert already active for this thread
+    if (this.activeAlertThread === this.currentThreadId) {
+      console.log('Privacy Shadow: Alert already active for thread, skipping');
+      return;
     }
+
+    // Remove old alert container if exists
+    if (this.alertContainer && this.alertContainer.parentNode) {
+      this.alertContainer.remove();
+    }
+    this.alertContainer = null;
+
+    // Create new container for alert
+    this.alertContainer = document.createElement('div');
+    this.alertContainer.id = 'privacy-shadow-alert-container';
+    document.body.appendChild(this.alertContainer);
+
+    // Mark this thread as having an active alert
+    this.activeAlertThread = this.currentThreadId;
 
     // Convert messages to StrangerFeatures format
     const features: StrangerFeatures = {
@@ -529,6 +562,15 @@ class InstagramStrangerMonitor {
     // Get current thread ID
     const threadId = this.currentThreadId;
 
+    // Clear active alert when user interacts
+    const clearAlert = () => {
+      this.activeAlertThread = null;
+      if (this.alertContainer) {
+        this.alertContainer.remove();
+        this.alertContainer = null;
+      }
+    };
+
     // Render alert
     render(
       <StrangerAlert
@@ -539,14 +581,14 @@ class InstagramStrangerMonitor {
           if (threadId) {
             this.markThreadAsAcknowledged(threadId);
           }
-          this.alertContainer?.remove();
+          clearAlert();
         }}
         onContinue={() => {
           console.log('Privacy Shadow: User clicked continue (I Know This Person)');
           if (threadId) {
             this.markThreadAsAcknowledged(threadId);
           }
-          this.alertContainer?.remove();
+          clearAlert();
         }}
         onLearnMore={() => {
           console.log('Privacy Shadow: User clicked learn more');
@@ -587,26 +629,34 @@ class InstagramStrangerMonitor {
    */
   private observeNewMessages(): void {
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = node as Element;
+      // Clear existing timer
+      if (this.debounceTimer) {
+        clearTimeout(this.debounceTimer);
+      }
 
-            // Check if it's a new message
-            if (element.classList.contains('x9f619') ||
-                element.querySelector('.x9f619') !== null) {
-              // Get current thread ID and remove from analyzed threads to allow re-analysis
-              const threadIdMatch = window.location.pathname.match(/\/direct\/t\/([^\/]+)/);
-              if (threadIdMatch) {
-                const threadId = threadIdMatch[1];
-                this.analyzedThreads.delete(threadId);
-                console.log('Privacy Shadow: New message detected, re-analyzing thread', threadId);
-                this.analyzeCurrentDMThread();
+      // Debounce to avoid triggering on every keystroke
+      this.debounceTimer = setTimeout(() => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+
+              // Check if it's a new message
+              if (element.classList.contains('x9f619') ||
+                  element.querySelector('.x9f619') !== null) {
+                // Get current thread ID and remove from analyzed threads to allow re-analysis
+                const threadIdMatch = window.location.pathname.match(/\/direct\/t\/([^\/]+)/);
+                if (threadIdMatch) {
+                  const threadId = threadIdMatch[1];
+                  this.analyzedThreads.delete(threadId);
+                  console.log('Privacy Shadow: New message detected, re-analyzing thread', threadId);
+                  this.analyzeCurrentDMThread();
+                }
               }
             }
-          }
+          });
         });
-      });
+      }, 1000); // Wait 1 second after last mutation before analyzing
     });
 
     observer.observe(document.body, {

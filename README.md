@@ -1,103 +1,108 @@
 # 👻 Privacy Shadow
 
-![ML](https://img.shields.io/badge/ML-TensorFlow.js-FF6F00?logo=tensorflow)
-![React](https://img.shields.io/badge/UI-React-61DAFB?logo=react)
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-56%20passing-brightgreen)
 ![TypeScript](https://img.shields.io/badge/Code-TypeScript-3178C6?logo=typescript)
+![React](https://img.shields.io/badge/UI-React-61DAFB?logo=react)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Accuracy](https://img.shields.io/badge/Accuracy-87%25-brightgreen)
 
-> **🛡️ AI-Powered Real-Time Protection Against Online Stranger Danger**
+> **🛡️ Real-Time Privacy Protection for Kids Online**
 
-**Privacy Shadow** is an advanced browser extension that uses machine learning to detect potential online predators and protect children and teenagers from dangerous interactions on social media platforms.
+**Privacy Shadow** is a Chrome extension that watches for personal information (PII) and grooming patterns in real time — alerting kids before they share something they shouldn't, and notifying parents when something worrying happens.
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/Audio431/fossasia-hackathon.git
 cd privacy-shadow
-
-# Install dependencies
 npm install
-
-# Build the extension
 npm run build
 ```
 
 **Load in Chrome**:
-1. Open `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select the `build/chrome-mv3-dev` folder
+1. Go to `chrome://extensions/`
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select `build/chrome-mv3-dev`
 
-**Try the Demo**: Open `demos/index.html` or `demos/showcase.html`
+**Try the Demo**: Open `test.html` in your browser or `demos/showcase.html` for the full feature showcase.
+
+📖 See [Quick Start Guide](./docs/QUICKSTART.md) for a detailed walkthrough.
 
 ---
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the [`docs/`](./docs/) directory:
-
-- **[Quick Start](./docs/QUICKSTART.md)** - Get up and running in 3 minutes
-- **[Demo Instructions](./docs/DEMO_INSTRUCTIONS.md)** - Complete 10-minute demo script
-- **[Features](./docs/FEATURES.md)** - Feature comparison and capabilities
-- **[Architecture](./docs/ARCHITECTURE.md)** - Technical architecture details
-- **[Hackathon Summary](./docs/HACKATHON_SUMMARY.md)** - Project overview
-- **[Contributing](./docs/CONTRIBUTING.md)** - Contribution guide
+- **[Quick Start](./docs/QUICKSTART.md)** — Get running in 3 minutes
+- **[Demo Instructions](./docs/DEMO_INSTRUCTIONS.md)** — 10-minute judge demo script
+- **[Features](./docs/FEATURES.md)** — Full feature list and status
+- **[Architecture](./docs/ARCHITECTURE.md)** — Technical deep-dive
 
 ---
 
 ## 🎯 Key Features
 
-### 🤖 Advanced ML Detection
-- **28-feature neural network** using TensorFlow.js
-- **87% accuracy** in stranger vs. known contact classification
-- **Real-time inference** in <200ms entirely in-browser
-- **Hybrid approach**: 70% ML + 30% rule-based
+### 🔒 PII Detection Engine
+- **7 categories**: birth date/age, location, contact info, home address, school/team, financial data, government ID
+- Detects common obfuscation (written-out phone numbers, shorthand ages)
+- Context-aware: stricter on public posts vs. DMs
+- Platform-specific Instagram bio/location scraping
 
-### 🛡️ Comprehensive Protection
-- **Real-time monitoring** of Instagram DMs, comments, and forms
-- **Grooming pattern detection** (4-stage identification)
-- **Personal info harvesting** detection
-- **Multi-platform support** (Instagram, Twitter, Discord, Facebook, TikTok, YouTube)
+### 🚨 Stranger Danger Monitor
+- **7 grooming pattern categories**: secrecy requests, meeting solicitations, personal info harvesting, age-inappropriate content, gift/bribe offers, isolation tactics, pressure/urgency
+- Accumulates conversation context across messages
+- Risk levels: `watch` → `warning` → `danger`
+- Shows a red overlay warning kids to stop and tell a trusted adult
 
-### 👨‍👩‍👧 Parent Dashboard
-- **Real-time monitoring** of all conversations
-- **Conversation analytics** with risk trends
-- **Educational resources** for families
-- **Actionable insights** and recommendations
+### 🛡️ Multi-Platform Support
+Instagram · Twitter/X · Facebook · TikTok · YouTube · Discord · Snapchat
+
+### 👨‍👩‍👧 Parent Popup Dashboard
+- Persistent alert history (survives browser restarts)
+- Separate PII vs. Stranger alert counts
+- 4-stat header: today / this week / PII blocked / stranger flags
+- Unread badge counter on extension icon
+- Master on/off toggle
+- Sensitivity levels (Low / Medium / High)
+- Quiet hours (pause alerts during sleep)
+- Educational tips toggle
 
 ---
 
 ## 🎬 Demo
 
-Try the interactive demo:
-- **[Demo Hub](./demos/index.html)** - Central demo page
-- **[Visual Showcase](./demos/showcase.html)** - Feature showcase page
-
-Or follow the **[Demo Instructions](./docs/DEMO_INSTRUCTIONS.md)** for a complete walkthrough.
+- **[Interactive Demo](./test.html)** — Fill PII and grooming scenarios, see the logger
+- **[Visual Showcase](./demos/showcase.html)** — Hackathon judge presentation
 
 ---
 
-## 📊 Performance Metrics
+## 📊 Detection Coverage
 
-| Metric | Value |
-|--------|-------|
-| **Accuracy** | 87% |
-| **Precision** | 91% |
-| **Recall** | 83% |
-| **Response Time** | <200ms |
-| **Features** | 28 |
+| Category | Examples Detected |
+|----------|------------------|
+| Birth date & age | "I'm turning 14", "born 03/15/2010", "7th grader" |
+| Location | "I live in Springfield, IL", GPS coordinates |
+| Contact info | Phone numbers, email addresses |
+| Home address | "123 Main St", street + city combos |
+| School / team | "I go to Lincoln Middle School", team names |
+| Financial | Credit card numbers, SSNs, bank accounts |
+| Government ID | Passport numbers, license plates |
+| Secrecy | "Don't tell your parents about us" |
+| Meeting | "Can we meet up in person?" |
+| Gift / Bribe | "I'll buy you a gift card" |
+| Age-inappropriate | Sexual content directed at minors |
+| Isolation | "Your friends don't understand you like I do" |
 
 ---
 
 ## 🏗️ Tech Stack
 
-- **AI/ML**: TensorFlow.js, Custom Neural Network
-- **Frontend**: React, TypeScript, Framer Motion
-- **Framework**: Plasmo (Chrome Extension)
+- **Framework**: [Plasmo](https://plasmo.com) (Chrome MV3 extension)
+- **UI**: React + TypeScript + Tailwind CSS
+- **Detection**: Custom heuristic engine (rule-based, no external API)
+- **Storage**: `chrome.storage.local` (alerts) + `chrome.storage.sync` (settings)
+- **Testing**: Jest (56 unit tests) + Playwright (21 E2E tests)
 - **Platforms**: Chrome, Edge
 
 ---
@@ -106,40 +111,54 @@ Or follow the **[Demo Instructions](./docs/DEMO_INSTRUCTIONS.md)** for a complet
 
 ```
 privacy-shadow/
-├── extension/           # Browser extension code
-├── docs/               # Comprehensive documentation
-├── demos/              # Demo and showcase pages
-├── tests/              # Test files
-└── README.md           # This file
+├── background.ts              # Service worker — alert storage, badge, message routing
+├── content.ts                 # Content script entry — imports all monitors
+├── popup.tsx                  # Extension popup — Parent/Kid/Settings tabs
+├── test.html                  # Interactive demo page
+├── extension/
+│   ├── detection/
+│   │   ├── pii-detector.ts    # PII detection engine (7 categories, 30+ patterns)
+│   │   └── stranger-detector.ts # Grooming pattern detector (7 categories)
+│   ├── contents/
+│   │   ├── form-monitor.ts    # Real-time input monitoring
+│   │   ├── stranger-monitor.ts # DM/chat grooming detection
+│   │   └── image-monitor.ts   # EXIF GPS detection on image uploads
+│   └── utils/
+│       └── settings.ts        # Settings storage and defaults
+├── docs/                      # Documentation
+├── demos/                     # Showcase pages
+└── tests/                     # Playwright E2E tests
+```
+
+---
+
+## 🧪 Tests
+
+```bash
+npm test                  # 56 unit tests (Jest)
+npm run test:e2e          # 21 E2E tests (Playwright)
 ```
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! See **[Contributing Guide](./docs/CONTRIBUTING.md)** for details.
+Issues and PRs welcome! See [Architecture](./docs/ARCHITECTURE.md) for the codebase map.
 
 ---
 
 ## 📜 License
 
-MIT License - see [LICENSE](./LICENSE) file
+MIT — see [LICENSE](./LICENSE)
 
 ---
 
 ## 🙏 Acknowledgments
 
-Built for FOSSASIA 2026 Hackathon
-Powered by Plasmo Framework, TensorFlow.js, and React
-Inspired by young people who deserve better privacy protection
-
----
-
-## 📞 Contact
-
-- **GitHub**: https://github.com/Audio431/fossasia-hackathon
-- **Issues**: https://github.com/Audio431/fossasia-hackathon/issues
+Built for **FOSSASIA 2026 Hackathon**  
+Powered by [Plasmo Framework](https://plasmo.com), React, and a lot of care for kids' safety online.
 
 ---
 
 **👻 Protecting young users online, one alert at a time.**
+
