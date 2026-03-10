@@ -326,15 +326,18 @@ function initializeDOMMonitoring(): void {
             textareas.forEach((textarea: Element) => {
               const htmlTextarea = textarea as HTMLTextAreaElement;
 
-              // Check on input
-              htmlTextarea.addEventListener('input', debounce(() => {
-                checkElementForPII(htmlTextarea);
-              }, 1000));
+              // Check if already monitored by another PS script
+              if ((htmlTextarea as HTMLElement).hasAttribute('data-ps-monitoring')) {
+                return;
+              }
 
-              // Check on blur
+              // ONLY check on blur (when leaving the field), NOT while typing
               htmlTextarea.addEventListener('blur', () => {
                 checkElementForPII(htmlTextarea);
               });
+
+              // Mark as monitored
+              (htmlTextarea as HTMLElement).setAttribute('data-ps-monitoring', 'dom');
             });
 
             // Monitor bio edits
@@ -666,25 +669,24 @@ function monitorInstagramSpecific(): void {
       return;
     }
 
+    // Check if another Privacy Shadow monitor is already attached
+    if ((element as HTMLElement).hasAttribute('data-ps-monitoring')) {
+      console.log('Privacy Shadow: Element already monitored by another PS script, skipping');
+      return;
+    }
+
     monitoredInputs.add(element);
+    (element as HTMLElement).setAttribute('data-ps-monitoring', 'dom');
     console.log('Privacy Shadow: Now monitoring element:', element.tagName, element.className);
 
-    // Real-time monitoring as user types
-    element.addEventListener('input', (e) => {
-      const target = e.target as Element;
-      console.log('Privacy Shadow: Input event detected!');
-      setTimeout(() => {
-        checkInputRealTime(target);
-      }, 100);
-    });
-
-    // Also check on blur (when leaving the field)
+    // ONLY check on blur (when leaving the field), NOT while typing
+    // This prevents annoying popups while the user is still typing
     element.addEventListener('blur', (e) => {
       const target = e.target as Element;
       console.log('Privacy Shadow: Blur event detected!');
       setTimeout(() => {
         checkInputRealTime(target);
-      }, 100);
+      }, 300); // Increased delay to match form-monitor
     });
   };
 
@@ -733,10 +735,12 @@ function monitorInstagramSpecific(): void {
 }
 
 // Initialize Instagram-specific monitoring if on Instagram
-if (window.location.hostname.includes('instagram.com')) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', monitorInstagramSpecific);
-  } else {
-    setTimeout(monitorInstagramSpecific, 2000);
-  }
-}
+// DISABLED: This creates duplicate alerts with form-monitor.ts and stranger-monitor.ts
+// Those two monitors already handle Instagram inputs properly with blur events
+// if (window.location.hostname.includes('instagram.com')) {
+//   if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', monitorInstagramSpecific);
+//   } else {
+//     setTimeout(monitorInstagramSpecific, 2000);
+//   }
+// }
