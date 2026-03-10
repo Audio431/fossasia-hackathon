@@ -41,12 +41,12 @@ const PII_RULES: PatternRule[] = [
   {
     category: "full_name",
     patterns: [
-      // "my name is X", "I'm X", "I am X", "call me X"
-      /\b(?:my\s+(?:full\s+)?name\s+is|i'?\s*a?m|call\s+me|they\s+call\s+me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
-      // "my name is X" with lowercase (kids don't always capitalize)
+      // "my name is X Y" - most reliable pattern
       /\bmy\s+(?:full\s+)?name\s+is\s+(\w+(?:\s+\w+)+)/gi,
-      // "i'm john smith" lowercase
-      /\bi'?m\s+([a-z]+\s+[a-z]+)\b/gi,
+      // "call me X Y"
+      /\b(?:call\s+me|they\s+call\s+me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
+      // "i'm X Y" but NOT followed by prepositions/common words
+      /\bi'?m\s+(?!at\b|in\b|on\b|from\b|near\b|here\b|there\b|the\b|a\b|not\b|so\b|very\b|just\b|going\b|doing\b|looking\b|trying\b|coming\b|getting\b|feeling\b|really\b|also\b|ok\b|okay\b|good\b|fine\b|bad\b|happy\b|sad\b|sure\b|like\b|about\b)([a-zA-Z]{2,}(?:\s+[a-zA-Z]{2,})+)\b/gi,
     ],
     confidence: 0.7,
   },
