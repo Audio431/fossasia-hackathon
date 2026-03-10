@@ -2,11 +2,19 @@
  * Privacy Shadow Background Service Worker
  */
 
-import { loadSettings, SENSITIVITY_THRESHOLDS } from './extension/utils/settings';
+import { loadSettings, saveSettings, SENSITIVITY_THRESHOLDS } from './extension/utils/settings';
+import { detectPII } from './extension/detection/pii-detector';
 
 console.log('👻 Privacy Shadow: Starting...');
 
 const alerts: any[] = [];
+let unreadCount = 0;
+
+function updateBadge(): void {
+  const text = unreadCount > 0 ? String(unreadCount > 99 ? '99+' : unreadCount) : '';
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+}
 
 function calculateRiskScore(detectedPII: any[]): { score: number; level: string; reasons: string[] } {
   const reasons = detectedPII.map(pii => pii.description);
@@ -29,7 +37,9 @@ function storeAlert(alert: any): void {
     ...alert
   };
 
-  alerts.unshift(alertWithTimestamp); // Add to beginning of array
+  alerts.unshift(alertWithTimestamp);
+  unreadCount++;
+  updateBadge();
 
   // Keep only last 100 alerts
   if (alerts.length > 100) {
@@ -53,28 +63,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'DETECT_PII') {
-    // Used by demo page and popup to test detection
     const text = message.text || '';
-    const hasBirthday = /\d{1,2}\/\d{1,2}\/\d{4}/.test(text);
-    const hasPhone = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(text);
-    const hasEmail = /[\w\.-]+@[\w\.-]+\.\w{2,}/.test(text);
-
-    const detected: any[] = [];
-    const reasons: string[] = [];
-
-    if (hasBirthday) { detected.push({ type: 'birthdate', description: 'Birth date' }); reasons.push('Birth date'); }
-    if (hasPhone)    { detected.push({ type: 'contact',   description: 'Phone number' }); reasons.push('Phone number'); }
-    if (hasEmail)    { detected.push({ type: 'contact',   description: 'Email address' }); reasons.push('Email address'); }
-
-    const riskScore = detected.length * 30;
+    const detected = detectPII(text, { platform: 'generic', isPublic: true, isDirectMessage: false });
+    const score = Math.min(detected.length * 30, 100);
+    const reasons = [...new Set(detected.map((p: any) => p.description))];
     const risk = {
-      score: Math.min(riskScore, 100),
-      level: riskScore >= 60 ? 'critical' : riskScore >= 30 ? 'high' : riskScore >= 15 ? 'medium' : 'low',
+      score,
+      level: score >= 60 ? 'critical' : score >= 30 ? 'high' : score >= 15 ? 'medium' : 'low',
       reasons,
-      shouldAlertKid: riskScore >= 25,
-      shouldAlertParent: riskScore >= 50,
+      shouldAlertKid: score >= 25,
+      shouldAlertParent: score >= 50,
     };
-
     sendResponse({ detected, risk });
     return false;
   }
@@ -85,9 +84,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'SAVE_SETTINGS') {
-    const { saveSettings } = require('./extension/utils/settings');
     saveSettings(message.settings).then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
     return true;
+  }
+
+  if (message.type === 'CLEAR_BADGE') {
+    unreadCount = 0;
+    updateBadge();
+    sendResponse({ ok: true });
+    return false;
   }
 
   if (message.type === 'SOCIAL_POST_DETECTED') {

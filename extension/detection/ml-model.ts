@@ -6,6 +6,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import { StrangerFeatures, mlFeatureExtractor } from './ml-features';
+import { trainingDataGenerator } from './training-data-generator';
 
 export interface ConversationFeatures {
   // Platform & context
@@ -72,11 +73,14 @@ class StrangerDetectionModel {
       // this.model = await tf.loadLayersModel(chrome.runtime.getURL('model/model.json'));
       // this.isModelLoaded = true;
 
-      // For hackathon demo, create a demo model
+      // For hackathon demo, create and train a demo model
       await this.createDemoModel();
       this.isModelLoaded = true;
 
-      console.log('Privacy Shadow: ML model initialized successfully');
+      // Train the model with synthetic data
+      await this.trainDemoModel();
+
+      console.log('Privacy Shadow: ML model initialized and trained successfully');
     } catch (error) {
       console.log('Privacy Shadow: ML model not loaded, using rule-based detection', error);
     }
@@ -134,49 +138,52 @@ class StrangerDetectionModel {
   }
 
   /**
-   * Train demo model with sample data
-   * This generates synthetic training data for demonstration
+   * Train demo model with comprehensive sample data
+   * Uses TrainingDataGenerator for realistic stranger/non-stranger patterns
    */
   async trainDemoModel(): Promise<void> {
     if (!this.model) return;
 
-    // Generate synthetic training data
-    // In production, this would use real labeled data
-    const numSamples = 100;
+    console.log('Privacy Shadow: Starting model training with comprehensive dataset...');
+
+    // Generate comprehensive training data using our data generator
+    const trainingData = trainingDataGenerator.generateTrainingData();
+    console.log(`Privacy Shadow: Generated ${trainingData.length} training samples`);
+
     const features: number[][] = [];
     const labels: number[][] = [];
 
-    for (let i = 0; i < numSamples; i++) {
-      const isStranger = Math.random() > 0.5;
-
-      // Generate random features
-      const feature: number[] = new Array(this.FEATURE_COUNT).fill(0).map((_, idx) => {
-        if (isStranger) {
-          // Stranger: higher risk signals
-          return Math.random() * 0.8 + 0.2;
-        } else {
-          // Known person: lower risk signals
-          return Math.random() * 0.3;
-        }
-      });
-
-      features.push(feature);
-      labels.push([isStranger ? 1 : 0]);
-    }
+    // Convert training data to tensors
+    trainingData.forEach((example) => {
+      features.push(example.features);
+      labels.push([example.label]);
+    });
 
     // Convert to tensors
     const xs = tf.tensor2d(features);
     const ys = tf.tensor2d(labels);
 
-    // Train model
-    await this.model.fit(xs, ys, {
-      epochs: 50,
-      batchSize: 32,
+    console.log('Privacy Shadow: Training model...');
+
+    // Train model with more epochs for better accuracy
+    const history = await this.model.fit(xs, ys, {
+      epochs: 100,
+      batchSize: 16,
       shuffle: true,
-      validationSplit: 0.2
+      validationSplit: 0.2,
+      callbacks: {
+        onEpochEnd: (epoch, logs) => {
+          if (epoch % 20 === 0) {
+            console.log(`Privacy Shadow: Training epoch ${epoch}: loss = ${logs?.loss?.toFixed(4)}, accuracy = ${logs?.acc?.toFixed(4)}`);
+          }
+        }
+      }
     });
 
-    console.log('Privacy Shadow: Demo model training complete');
+    const finalAccuracy = history.history.acc[history.history.acc.length - 1];
+    const finalLoss = history.history.loss[history.history.loss.length - 1];
+
+    console.log(`Privacy Shadow: Demo model training complete - Accuracy: ${(finalAccuracy * 100).toFixed(1)}%, Loss: ${finalLoss.toFixed(4)}`);
 
     // Clean up tensors
     xs.dispose();

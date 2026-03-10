@@ -40,6 +40,9 @@ function IndexPopup() {
   useEffect(() => {
     setLoading(false);
 
+    // Clear badge when popup opens
+    chrome.runtime.sendMessage({ type: 'CLEAR_BADGE' }).catch(() => {});
+
     chrome.runtime.sendMessage({ type: 'GET_ALERTS' }, (response) => {
       if (chrome.runtime.lastError) return;
       if (response?.alerts) {

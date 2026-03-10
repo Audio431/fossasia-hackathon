@@ -35,3 +35,19 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Test Reports
+test-results/
+playwright-report/
+*.log
+
+# Harness (development workflow)
+harness-*.json
+harness-*.txt
+.harness-active
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
