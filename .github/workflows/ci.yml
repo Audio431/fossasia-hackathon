@@ -16,10 +16,10 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 📦 Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -31,29 +31,31 @@ jobs:
       run: npm run build
 
     - name: ✅ Run tests
-      run: npm test -- --coverage
-      continue-on-error: true
+      run: npm run test:coverage
+      continue-on-error: false
 
     - name: 📊 Lint code
       run: npm run lint
-      continue-on-error: true
+      continue-on-error: false
 
     - name: 📦 Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: extension-build-${{ matrix.node-version }}
-        path: build/
+        path: build/chrome-mv3-dev/
         retention-days: 7
 
   test-e2e:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 📦 Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 20.x
         cache: 'npm'
@@ -64,26 +66,31 @@ jobs:
     - name: 🏗️ Build extension
       run: npm run build
 
+    - name: 🎭 Install Playwright browsers
+      run: npx playwright install --with-deps
+
     - name: 🎭 Run E2E tests
       run: npm run test:e2e
       continue-on-error: true
 
     - name: 📸 Upload screenshots
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-screenshots
         path: test-results/
+        retention-days: 3
 
   security-scan:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 🔍 Run security scan
-      uses: Aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
         scan-ref: '.'
@@ -92,20 +99,22 @@ jobs:
       continue-on-error: true
 
     - name: 📤 Upload security results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
+        category: 'trivy'
 
   dependency-check:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 🔨 Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 20.x
         cache: 'npm'
@@ -125,10 +134,10 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 🔨 Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 20.x
         cache: 'npm'
@@ -138,12 +147,8 @@ jobs:
 
     - name: 📏 Check code formatting
       run: npm run format:check
-      continue-on-error: true
+      continue-on-error: false
 
     - name: 🏗️ Type checking
-      run: npx tsc --noEmit
-      continue-on-error: true
-
-    - name: 📊 Complexity report
-      run: npm run complexity
-      continue-on-error: true
+      run: npm run type-check
+      continue-on-error: false

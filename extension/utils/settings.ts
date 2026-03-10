@@ -13,6 +13,8 @@ export interface QuietHours {
 }
 
 export interface PrivacyShadowSettings {
+  /** Master kill-switch — when false all monitoring is paused */
+  enabled: boolean;
   sensitivity: SensitivityLevel;
   quietHours: QuietHours;
   /** Show educational tip in alert overlay */
@@ -22,6 +24,7 @@ export interface PrivacyShadowSettings {
 }
 
 export const DEFAULT_SETTINGS: PrivacyShadowSettings = {
+  enabled: true,
   sensitivity: 'medium',
   quietHours: {
     enabled: false,

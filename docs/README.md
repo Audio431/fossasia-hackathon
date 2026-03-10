@@ -7,7 +7,7 @@ Welcome to the Privacy Shadow documentation hub!
 ### Getting Started
 - [Quick Start Guide](./QUICKSTART.md) - Get up and running in 3 minutes
 - [Demo Instructions](./DEMO_INSTRUCTIONS.md) - Complete demo walkthrough
-- [Installation Guide](./INSTALLATION.md) - Detailed setup instructions
+- [Installation Guide](../README.md) - Detailed setup instructions
 
 ### Technical Documentation
 - [Features Overview](./FEATURES.md) - Feature comparison and capabilities
