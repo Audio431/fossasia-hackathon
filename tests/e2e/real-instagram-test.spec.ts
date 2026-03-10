@@ -130,6 +130,12 @@ test('Instagram DM - Real Website Test', async () => {
         await firstTextarea.fill('my address is 123 main street springfield illinois');
         await page.waitForTimeout(500);
         await firstTextarea.blur(); // Trigger blur
+
+        // Also dispatch blur event manually (some browsers need this)
+        await page.evaluate((el) => {
+          el.dispatchEvent(new Event('blur', { bubbles: true, cancelable: true }));
+        }, await firstTextarea.elementHandle());
+
         await page.waitForTimeout(2000); // Wait for alert
 
         // Check if alert appeared

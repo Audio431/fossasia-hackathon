@@ -105,9 +105,23 @@ function attachInputMonitor(el: Element): void {
         ? el.value
         : (el as HTMLElement).innerText || '';
 
-      if (value === lastChecked || value.length < 5) return;
-      if (value === acknowledgedValue) return; // Already acknowledged this value!
-      if (value.length < 10) return; // Require at least 10 characters
+      console.log('🔍 Privacy Shadow [form-monitor]: Blur triggered!', {
+        value: value.substring(0, 50),
+        length: value.length
+      });
+
+      if (value === lastChecked || value.length < 5) {
+        console.log('⏭️ Skipped: value === lastChecked or too short');
+        return;
+      }
+      if (value === acknowledgedValue) {
+        console.log('⏭️ Skipped: Already acknowledged');
+        return;
+      }
+      if (value.length < 10) {
+        console.log('⏭️ Skipped: Less than 10 characters');
+        return;
+      }
 
       lastChecked = value;
 
@@ -118,18 +132,44 @@ function attachInputMonitor(el: Element): void {
         isDirectMessage: window.location.href.includes('/messages/') || window.location.href.includes('/dm/'),
       });
 
-      if (detected.length === 0) return;
+      console.log('🔍 PII Detection:', {
+        detected: detected.length,
+        types: detected.map(p => p.type)
+      });
+
+      if (detected.length === 0) {
+        console.log('⏭️ No PII detected');
+        return;
+      }
 
       // Check settings: enabled flag, quiet hours, sensitivity threshold
       const settings = await loadSettings();
-      if (settings.enabled === false) return;
-      if (isQuietHours(settings)) return;
+      console.log('⚙️ Settings:', {
+        enabled: settings.enabled,
+        quietHours: isQuietHours(settings),
+        sensitivity: settings.sensitivity
+      });
+
+      if (settings.enabled === false) {
+        console.log('⏭️ Extension disabled in settings');
+        return;
+      }
+      if (isQuietHours(settings)) {
+        console.log('⏭️ Quiet hours active');
+        return;
+      }
 
       const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];
       const score = Math.min(detected.length * 30, 100);
 
       const reasons = [...new Set(detected.map(p => p.description))];
       const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
+
+      console.log('🚨 SHOWING ALERT:', {
+        score,
+        level,
+        reasons
+      });
 
       safeSendMessage({
         type: 'FORM_SUBMISSION',
@@ -142,6 +182,7 @@ function attachInputMonitor(el: Element): void {
           // User acknowledged the risk - remember this value
           acknowledgedValue = value;
           lastChecked = value;
+          console.log('✅ User clicked Send Anyway');
         },
         onCancel: () => {
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
@@ -153,6 +194,7 @@ function attachInputMonitor(el: Element): void {
           }
           lastChecked = '';
           acknowledgedValue = '';
+          console.log('❌ User clicked Nevermind');
         },
       });
     }, 300); // Short delay on blur to prevent immediate popup

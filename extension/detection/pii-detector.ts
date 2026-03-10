@@ -87,6 +87,8 @@ const PATTERNS: PIIPattern[] = [
       /\bi(?:'m|\s+am)\s+(?:at|inside)\s+(?:the\s+)?([A-Za-z][a-zA-Z\s]{2,30})\b/gi,
       /\b(?:just\s+(?:got|arrived|got\s+to)|heading\s+to)\s+(?:the\s+)?([A-Z][a-zA-Z\s]{2,25})\b/gi,
       /\b(?:meet\s+me\s+(?:at|in|by)|i'll\s+be\s+at)\s+(?:the\s+)?([A-Z][a-zA-Z\s]{2,30})\b/gi,
+      // Habitual location: "I usually go to the park", "I hang out at the skate park every weekend"
+      /\bi(?:'m|\s+am|\s+usually)\s+(?:usually\s+|always\s+)?(?:at|around|near|by)\s+(?:the\s+)?([a-zA-Z][a-zA-Z\s]{3,30}(?:park|mall|gym|court|pool|school|plaza|center|field|library))/gi,
     ],
     severity: 'high',
     description: 'Location information',
@@ -98,8 +100,8 @@ const PATTERNS: PIIPattern[] = [
     regex: [
       // Phone numbers (US format): "123-456-7890", "(123) 456-7890", "123.456.7890"
       /\b(?:\(\d{3}\)|\d{3})[-.]\d{3}[-.]\d{4}\b|\b\d{3}\s\d{3}\s\d{4}\b/g,
-      // Spaced-out digits: "1 2 3 4 5 6 7 8 9 0" — only with phone context words to reduce FP
-      /\b(?:my\s+(?:number|phone|cell|mobile)\s+is\s+)?\d(?:\s+\d){9}\b/gi,
+      // Spaced-out digits: "1 2 3 4 5 6 7 8 9 0" — require phone context to avoid FP
+      /\b(?:my\s+(?:number|phone|cell|mobile)\s+is\s+)\d(?:\s+\d){9}\b/gi,
       // Phone numbers (international): "+1 234 567 8900"
       /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/g,
       // Email addresses

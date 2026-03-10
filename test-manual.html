@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Privacy Shadow Manual Test</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .instructions {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.fail { background: #f8d7da; color: #721c24; }
+    .status.info { background: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ Privacy Shadow Manual Test</h1>
+
+  <div class="instructions">
+    <h3>📋 How to Test:</h3>
+    <ol>
+      <li>Make sure Privacy Shadow extension is loaded in Chrome</li>
+      <li>Open DevTools Console (F12) to see debug logs</li>
+      <li>For each test below, type the text in the textarea</li>
+      <li><strong>Click outside the textarea</strong> to trigger blur</li>
+      <li>An alert should appear for PII tests (not for safe message)</li>
+    </ol>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 1: Safe Message (Should NOT alert)</h3>
+    <textarea id="test1" placeholder="Type: hey whats up"></textarea>
+    <div id="status1" class="status info">Waiting for test...</div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 2: Address (Should alert)</h3>
+    <textarea id="test2" placeholder="Type: my address is 123 main street"></textarea>
+    <div id="status2" class="status info">Waiting for test...</div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 3: Email (Should alert)</h3>
+    <textarea id="test3" placeholder="Type: my email is myname@gmail.com"></textarea>
+    <div id="status3" class="status info">Waiting for test...</div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 4: Phone (Should alert)</h3>
+    <textarea id="test4" placeholder="Type: call me at 555-123-4567"></textarea>
+    <div id="status4" class="status info">Waiting for test...</div>
+  </div>
+
+  <script>
+    // Monitor all textareas
+    document.querySelectorAll('textarea').forEach(textarea => {
+      textarea.addEventListener('blur', function() {
+        const testNum = this.id.replace('test', '');
+        const status = document.getElementById('status' + testNum);
+
+        // Wait a moment for alert to appear
+        setTimeout(() => {
+          const overlay = document.getElementById('privacy-shadow-overlay');
+          const isVisible = overlay && overlay.getBoundingClientRect().width > 0;
+
+          if (isVisible) {
+            status.textContent = '✅ SUCCESS: Alert appeared!';
+            status.className = 'status success';
+          } else {
+            // For test 1, no alert is expected
+            if (testNum === '1') {
+              status.textContent = '✅ SUCCESS: No alert (as expected)';
+              status.className = 'status success';
+            } else {
+              status.textContent = '❌ FAIL: No alert appeared';
+              status.className = 'status fail';
+            }
+          }
+        }, 1000);
+      });
+    });
+
+    // Check if extension is monitoring
+    setTimeout(() => {
+      const monitored = document.querySelectorAll('[data-ps-monitoring]');
+      console.log('🔍 Privacy Shadow: Monitoring', monitored.length, 'elements');
+      console.log('🔍 Privacy Shadow: Elements:', Array.from(monitored).map(el => ({
+        tag: el.tagName,
+        monitoring: el.getAttribute('data-ps-monitoring')
+      })));
+    }, 3000);
+  </script>
+</body>
+</html>

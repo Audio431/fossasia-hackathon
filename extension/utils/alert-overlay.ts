@@ -28,11 +28,13 @@ const COLORS: Record<string, { bg: string; border: string; emoji: string; title:
 
 /** Kid-friendly educational tips keyed by detected PII type. */
 const EDU_TIPS: Record<string, string> = {
+  name:       '👤 Sharing your full name makes it easy for strangers to look you up online.',
+  routine:    '🕐 Telling people when you\'re home alone or your schedule can put you in danger.',
   birthdate:  '🎂 Sharing your birthday or age helps strangers figure out who you are.',
-  location:   '📍 Telling people where you live can help strangers find you in real life.',
-  contact:    '📞 Only share your phone number with people you already know and trust.',
+  location:   '📍 Telling people where you are right now can let strangers find you in real life.',
+  contact:    '📞 Only share your phone number or username with people you already know and trust.',
   address:    '🏠 Your home address is private — sharing it can put your whole family at risk.',
-  school:     '🏫 Your school name can help strangers find you — keep it between friends.',
+  school:     '🏫 Your school name can help strangers find you — keep it between close friends.',
   financial:  '💳 Never share credit card or bank numbers online. Even with friends!',
   identity:   '🪪 ID numbers like SSNs can be used to steal your identity. Keep them secret.',
   image:      '📸 Photos can contain hidden GPS data that reveals exactly where you were.',

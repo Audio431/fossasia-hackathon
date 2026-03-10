@@ -420,6 +420,58 @@
 
     <div class="scenario-card">
       <div class="card-header">
+        <div class="card-icon red">👤</div>
+        <div>
+          <div class="card-title">Full Name Sharing</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Kids introducing themselves with full name to strangers.</p>
+      <textarea class="test-input" id="in-name" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-name', 'Hi! My name is Emma Thompson, nice to meet you')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon red">🕐</div>
+        <div>
+          <div class="card-title">Home Alone / Routine</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Vulnerability signals — home alone, daily schedule, walking alone.</p>
+      <textarea class="test-input" id="in-routine" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-routine', 'home alone until 6pm, I walk alone to school every morning')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon amber">📱</div>
+        <div>
+          <div class="card-title">Social Handle Sharing</div>
+        </div>
+      </div>
+      <span class="severity-tag high">⚠️ High</span>
+      <p class="card-desc">Sharing usernames / handles on social apps.</p>
+      <textarea class="test-input" id="in-handle" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-handle', 'my snapchat is emma_t2009, add me on tiktok as emmaworld')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon amber">📍</div>
+        <div>
+          <div class="card-title">Real-Time Location</div>
+        </div>
+      </div>
+      <span class="severity-tag high">⚠️ High</span>
+      <p class="card-desc">Telling someone where you are right now.</p>
+      <textarea class="test-input" id="in-loc" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-loc', `I'm at the mall right now, meet me at the food court`)">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
         <div class="card-icon red">🎂</div>
         <div>
           <div class="card-title">Birthdate + Age</div>
@@ -519,7 +571,7 @@
       <span class="severity-tag critical">🛑 CRITICAL COMBO</span>
       <p class="card-desc">Multiple PII types — the worst-case scenario.</p>
       <textarea class="test-input" id="in-all" rows="3" placeholder="Type here to test…"></textarea>
-      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-all', `Hi! I'm Jake, 13 years old (born 05/12/2012). I live at 42 Oak Ave, Denver, CO 80201. Call me at 303-555-1234. I go to Lincoln High School. Plate: XYZ-789.`)">Auto-fill Max Risk</button>
+      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-all', `Hi! I'm Emma Thompson, 13 years old (born 05/12/2012). Home alone until 6pm. I live at 42 Oak Ave, Denver, CO 80201. My snapchat is emma_t2009. Call me at 303-555-1234.`)">Auto-fill Max Risk</button>
     </div>
 
   </div>
