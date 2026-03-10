@@ -13,8 +13,18 @@
     "build:chrome": "plasmo build --chrome",
     "build:edge": "plasmo build --edge",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
-    "lint": "eslint . --ext .ts,.tsx"
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf build dist .plasmo",
+    "rebuild": "npm run clean && npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@plasmohq/storage": "^1.14.0",

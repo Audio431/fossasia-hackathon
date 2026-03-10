@@ -192,6 +192,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === 'STRANGER_RISK_DETECTED') {
+    const { score, level, flags, url } = message.data;
+    const risk = {
+      score,
+      level: level === 'danger' ? 'critical' : level === 'warning' ? 'high' : 'medium',
+      reasons: flags,
+    };
+    const alert = {
+      type: 'stranger_risk',
+      risk,
+      context: {
+        platform: 'social',
+        website: new URL(url || 'https://unknown').hostname,
+        url: url || 'unknown',
+      },
+      pii: flags.map((f: string) => ({ type: 'stranger', description: f })),
+    };
+    storeAlert(alert);
+    sendResponse({ ok: true });
+    return false;
+  }
+
   if (message.type === 'DISMISS_ALERT') {
     // Remove alert from storage
     const alertId = message.alertId;

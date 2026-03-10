@@ -243,6 +243,22 @@
     .severity-tag.critical { background: rgba(239,68,68,0.15); color: #f87171; }
     .severity-tag.high     { background: rgba(245,158,11,0.15); color: #fbbf24; }
     .severity-tag.medium   { background: rgba(124,58,237,0.15); color: #a78bfa; }
+    .severity-tag.danger   { background: rgba(239,68,68,0.2);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+
+    /* ── STRANGER SECTION ────────────────────────────── */
+    .stranger-banner {
+      background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .stranger-banner .banner-icon { font-size: 36px; flex-shrink: 0; }
+    .stranger-banner h3 { font-weight: 800; font-size: 15px; color: #f87171; margin-bottom: 4px; }
+    .stranger-banner p  { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
     /* ── DETECTION TYPES GRID ────────────────────────── */
     .types-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -511,6 +527,84 @@
 
 <div class="divider"></div>
 
+<!-- STRANGER DANGER DEMO -->
+<section class="section">
+  <p class="section-label">Stranger Danger Monitor</p>
+  <h2 class="section-title">Grooming Pattern Detection</h2>
+
+  <div class="stranger-banner">
+    <div class="banner-icon">🚨</div>
+    <div>
+      <h3>Real-Time Stranger Detection</h3>
+      <p>Privacy Shadow watches chat inputs for grooming patterns — secrecy requests, meeting solicitations,
+      gift bribes, and isolation tactics — and alerts kids before it's too late.</p>
+    </div>
+  </div>
+
+  <p style="color:var(--muted);margin-bottom:24px;font-size:14px;">
+    These inputs simulate a DM chat. With Privacy Shadow installed, typing or auto-filling these messages
+    triggers the <strong style="color:#f87171">Stranger Danger Alert</strong> overlay.
+  </p>
+
+  <div class="scenarios">
+
+    <div class="scenario-card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="card-header">
+        <div class="card-icon red">🤫</div>
+        <div>
+          <div class="card-title">Secrecy Request</div>
+        </div>
+      </div>
+      <span class="severity-tag danger">🚨 Danger</span>
+      <p class="card-desc">Classic grooming: asking a child to hide the conversation from parents.</p>
+      <textarea class="test-input stranger-input" id="in-s1" rows="2" placeholder="Simulating DM chat…"></textarea>
+      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-s1', &quot;Don't tell your parents we talk — keep it our little secret, okay?&quot;)">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="card-header">
+        <div class="card-icon red">📍</div>
+        <div>
+          <div class="card-title">Meeting Request</div>
+        </div>
+      </div>
+      <span class="severity-tag danger">🚨 Danger</span>
+      <p class="card-desc">Stranger attempts to arrange an in-person meeting with the child.</p>
+      <textarea class="test-input stranger-input" id="in-s2" rows="2" placeholder="Simulating DM chat…"></textarea>
+      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-s2', &quot;Let's meet up after school! I can pick you up — it'll be fun!&quot;)">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="card-header">
+        <div class="card-icon red">🎁</div>
+        <div>
+          <div class="card-title">Gift / Bribe</div>
+        </div>
+      </div>
+      <span class="severity-tag high">⚠️ Warning</span>
+      <p class="card-desc">Offering free items (Robux, gift cards) in exchange for personal info or compliance.</p>
+      <textarea class="test-input stranger-input" id="in-s3" rows="2" placeholder="Simulating DM chat…"></textarea>
+      <button class="btn-fill" style="background:#b45309;" onclick="fill('in-s3', &quot;I'll give you free Robux if you follow me and send me your number!&quot;)">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card" style="border-color:rgba(239,68,68,0.4)">
+      <div class="card-header">
+        <div class="card-icon red">☠️</div>
+        <div>
+          <div class="card-title">Full Grooming Combo</div>
+        </div>
+      </div>
+      <span class="severity-tag danger">🚨 MAXIMUM DANGER</span>
+      <p class="card-desc">Multiple grooming tactics combined — secrecy, meeting, isolation, bribe.</p>
+      <textarea class="test-input stranger-input" id="in-s4" rows="3" placeholder="Simulating DM chat…"></textarea>
+      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-s4', &quot;Our secret — don't tell your parents we talk. Let's meet in person, I'll pick you up. Are you home alone? Your friends don't understand you like I do. I'll buy you gifts.&quot;)">Auto-fill Combo</button>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- WHAT IT DETECTS -->
 <section class="section">
   <p class="section-label">Detection Engine</p>
@@ -619,6 +713,11 @@
       <div class="plat-scope">Comments · Bio · Captions</div>
     </div>
     <div class="plat-card">
+      <div class="plat-icon">👻</div>
+      <div class="plat-name">Snapchat</div>
+      <div class="plat-scope">Chats · Snaps · Story replies</div>
+    </div>
+    <div class="plat-card">
       <div class="plat-icon">💬</div>
       <div class="plat-name">Discord</div>
       <div class="plat-scope">Messages · Channels · DMs</div>
@@ -716,7 +815,12 @@
     // Dispatch native input event so the extension's listener fires
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.focus();
-    addLog(`Filled "${id}" with test data — watch for the Privacy Shadow overlay!`, 'warn');
+    const isStranger = el.classList.contains('stranger-input');
+    if (isStranger) {
+      addLog(`🚨 Filled "${id}" with grooming pattern — watch for Stranger Danger Alert!`, 'error');
+    } else {
+      addLog(`Filled "${id}" with test data — watch for the Privacy Shadow overlay!`, 'warn');
+    }
   }
 
   // ── Init ─────────────────────────────────────────────────────
