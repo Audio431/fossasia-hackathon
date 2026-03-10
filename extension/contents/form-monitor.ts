@@ -83,7 +83,15 @@ const monitoredInputs = new WeakSet<Element>();
 
 function attachInputMonitor(el: Element): void {
   if (monitoredInputs.has(el)) return;
+
+  // Check if another Privacy Shadow monitor is already attached
+  if ((el as HTMLElement).hasAttribute('data-ps-monitoring')) {
+    console.log('Privacy Shadow: Element already monitored by another PS script, skipping');
+    return;
+  }
+
   monitoredInputs.add(el);
+  (el as HTMLElement).setAttribute('data-ps-monitoring', 'form');
 
   let timer: ReturnType<typeof setTimeout>;
   let lastChecked = '';

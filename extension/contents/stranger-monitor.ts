@@ -68,6 +68,11 @@ const MIN_LENGTH = 20; // Don't analyse very short messages
 const monitoredInputs = new WeakSet<Element>();
 let overlayVisible = false;
 
+// Check if another Privacy Shadow monitor is already attached
+function isAlreadyMonitored(el: Element): boolean {
+  return (el as HTMLElement).hasAttribute('data-ps-monitoring');
+}
+
 // ─── Overlay ─────────────────────────────────────────────────────────────────
 
 function removeOverlay(): void {
@@ -158,7 +163,15 @@ function showStrangerWarning(flags: string[]): void {
 
 function attachMonitor(el: Element): void {
   if (monitoredInputs.has(el)) return;
+
+  // Check if another Privacy Shadow monitor is already attached
+  if (isAlreadyMonitored(el)) {
+    console.log('Privacy Shadow: Element already monitored by another PS script, skipping');
+    return;
+  }
+
   monitoredInputs.add(el);
+  (el as HTMLElement).setAttribute('data-ps-monitoring', 'stranger');
 
   let debounce: ReturnType<typeof setTimeout>;
   let lastValue = '';
