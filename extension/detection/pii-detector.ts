@@ -4,7 +4,7 @@
  */
 
 export interface PIIPattern {
-  type: 'location' | 'birthdate' | 'contact' | 'image' | 'address' | 'school';
+  type: 'location' | 'birthdate' | 'contact' | 'image' | 'address' | 'school' | 'financial' | 'identity';
   regex: RegExp[];
   severity: 'low' | 'medium' | 'high';
   description: string;
@@ -68,8 +68,12 @@ const PATTERNS: PIIPattern[] = [
   {
     type: 'contact',
     regex: [
-      // Phone numbers (US format): "123-456-7890", "(123) 456-7890"
+      // Phone numbers (US format): "123-456-7890", "(123) 456-7890", "123.456.7890"
       /\b\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
+      // Bare 10-digit number (no separators): "1234567890"
+      /\b\d{10}\b/g,
+      // Obfuscated with spaces between digits: "1 2 3 4 5 6 7 8 9 0"
+      /\b\d(?:\s\d){9}\b/g,
       // Phone numbers (international): "+1 234 567 8900"
       /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/g,
       // Email addresses
@@ -104,10 +108,54 @@ const PATTERNS: PIIPattern[] = [
       /\b([A-Z][a-z]+\s+)*(high|middle|elementary|primary|junior|senior)\s+(school|academy|institute|college)\b/gi,
       // University names: "University of Springfield"
       /\b(university|college|institute)\s+of\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)?\b/gi,
+      // "I go to [School]" / "I attend [School]"
+      /\b(i\s+go\s+to|i\s+attend|my\s+school\s+is)\s+[A-Z][a-zA-Z\s]{2,30}\b/gi,
+      // Sports teams by mascot: "the Springfield Eagles"
+      /\b(?:the\s+)?[A-Z][a-z]+\s+(Eagles?|Tigers?|Bears?|Lions?|Panthers?|Warriors?|Knights?|Bulldogs?|Falcons?|Hawks?|Wolves?|Cougars?|Rams?|Wildcats?|Mustangs?|Trojans?|Spartans?|Rockets?|Hornets?|Chargers?)\b/g,
+      // "I play for [Team]"
+      /\bi\s+play\s+(?:on|for)\s+(?:the\s+)?[A-Z][a-zA-Z\s]{2,30}\b/gi,
     ],
     severity: 'medium',
-    description: 'School or educational institution'
-  }
+    description: 'School or team name'
+  },
+  {
+    type: 'financial',
+    regex: [
+      // SSN with dashes (XXX-XX-XXXX) — requires dashes to avoid false positives on bare numbers
+      /\b(?!000|666|9\d{2})\d{3}-\d{2}-\d{4}\b/g,
+      // SSN with context clue (allows spaces or dashes)
+      /\b(?:ssn|social\s+security(?:\s+(?:number|#|no\.?))?)\s*[:=]?\s*(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b/gi,
+      // Visa: 4xxx-xxxx-xxxx-xxxx
+      /\b4\d{3}[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
+      // Mastercard: 5[1-5]xx or 2[2-7]xx
+      /\b(?:5[1-5]\d{2}|2(?:2[2-9]\d|[3-6]\d{2}|7[01]\d|720))[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
+      // Amex: 3[47]xx xxxxxx xxxxx
+      /\b3[47]\d{2}[-\s]\d{6}[-\s]\d{5}\b/g,
+      // Discover: 6011 or 65xx
+      /\b6(?:011|5\d{2})[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
+      // Generic 16-digit card with separators
+      /\b\d{4}[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g,
+      // Credit card with context clue (bare 16-digit number)
+      /\b(?:card\s+(?:number|#|no\.?)|credit\s+card|debit\s+card|cc\s*#?)\s*[:=]?\s*\d{13,19}\b/gi,
+    ],
+    severity: 'high',
+    description: 'Financial account number'
+  },
+  {
+    type: 'identity',
+    regex: [
+      // US passport with context clue
+      /\b(?:passport(?:\s+(?:number|#|no\.?))?)\s*[:=]?\s*[A-Z]\d{8}\b/gi,
+      // Driver's license with context clue
+      /\b(?:driver'?s?\s+license(?:\s+(?:number|#|no\.?))?|dl\s*#?)\s*[:=]?\s*[A-Z0-9]{5,15}\b/gi,
+      // License plate with context clue
+      /\b(?:license\s+plate|plate\s+(?:number|#|no\.?))\s*[:=]?\s*[A-Z0-9]{2,8}\b/gi,
+      // Standard US license plate patterns (e.g. ABC-1234, 123-ABC, AB-12345)
+      /\b[A-Z]{1,3}[-\s]\d{3,4}[-\s]?[A-Z]{0,3}\b/g,
+    ],
+    severity: 'high',
+    description: 'Government ID or license plate'
+  },
 ];
 
 /**
@@ -236,6 +284,10 @@ export function hasHighRiskCombinations(detectedPII: DetectedPII[]): boolean {
     ['contact', 'location'],
     ['contact', 'school'],
     ['address', 'birthdate'],
+    ['financial', 'birthdate'],
+    ['financial', 'address'],
+    ['identity', 'birthdate'],
+    ['identity', 'location'],
   ];
 
   return dangerousCombos.some(combo =>

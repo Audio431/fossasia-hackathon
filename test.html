@@ -1,9 +1,730 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Shadow Test Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Shadow — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0f0e17;
+      --surface:  #1c1a2e;
+      --surface2: #252340;
+      --purple:   #7c3aed;
+      --purple-l: #a78bfa;
+      --amber:    #f59e0b;
+      --red:      #ef4444;
+      --green:    #10b981;
+      --text:     #e8e4f3;
+      --muted:    #8b82a8;
+      --border:   #2e2c44;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(15,14,23,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo .ghost { font-size: 24px; }
+
+    #ext-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+    #ext-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+    #ext-badge.active   { border-color: var(--green);  background: rgba(16,185,129,0.1); }
+    #ext-badge.active   .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    #ext-badge.inactive { border-color: var(--red);    background: rgba(239,68,68,0.1); }
+    #ext-badge.inactive .dot { background: var(--red); }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 72px 32px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,58,237,0.18), transparent);
+      pointer-events: none;
+    }
+
+    .hero-ghost {
+      font-size: 72px;
+      display: block;
+      margin: 0 auto 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    h1 span { color: var(--purple-l); }
+
+    .hero-sub {
+      max-width: 520px;
+      margin: 0 auto 32px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .platform-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pill.active { border-color: var(--purple); color: var(--purple-l); }
+
+    /* ── SECTION HEADERS ─────────────────────────────── */
+    .section { padding: 48px 32px; max-width: 980px; margin: 0 auto; }
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--purple-l);
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 32px;
+    }
+
+    /* ── SCENARIO CARDS ──────────────────────────────── */
+    .scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+    .scenario-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .scenario-card:hover { border-color: var(--purple); transform: translateY(-2px); }
+
+    .scenario-card .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .scenario-card .card-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .card-icon.red    { background: rgba(239,68,68,0.15); }
+    .card-icon.amber  { background: rgba(245,158,11,0.15); }
+    .card-icon.purple { background: rgba(124,58,237,0.15); }
+    .card-icon.blue   { background: rgba(59,130,246,0.15); }
+
+    .scenario-card .card-title { font-weight: 700; font-size: 14px; }
+    .scenario-card .card-desc  { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+    .test-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .test-input:focus { border-color: var(--purple); }
+
+    .btn-fill {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: none;
+      background: var(--purple);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-fill:hover  { background: #6d28d9; }
+    .btn-fill:active { transform: scale(0.97); }
+
+    .severity-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .severity-tag.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+    .severity-tag.high     { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .severity-tag.medium   { background: rgba(124,58,237,0.15); color: #a78bfa; }
+
+    /* ── DETECTION TYPES GRID ────────────────────────── */
+    .types-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+    .type-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+    .type-card:hover { border-color: var(--purple-l); }
+    .type-card .t-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .type-card .t-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+    .type-card .t-desc { font-size: 11px; color: var(--muted); }
+    .type-card .t-new  {
+      display: inline-block;
+      background: rgba(245,158,11,0.2);
+      color: #fbbf24;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    /* ── PLATFORM GRID ───────────────────────────────── */
+    .plat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .plat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 14px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .plat-card:hover { border-color: var(--purple); background: var(--surface2); }
+    .plat-icon { font-size: 28px; margin-bottom: 8px; }
+    .plat-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+    .plat-scope { font-size: 11px; color: var(--muted); }
+
+    /* ── LOG ─────────────────────────────────────────── */
+    .log-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .log-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.15s;
+    }
+    .log-clear:hover { border-color: var(--purple-l); color: var(--purple-l); }
+    #logOutput {
+      padding: 12px 16px;
+      font-family: 'DM Mono', 'Fira Mono', monospace;
+      font-size: 12px;
+      min-height: 120px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .log-line { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .log-line:last-child { border-bottom: none; }
+    .log-line.info  { color: #93c5fd; }
+    .log-line.warn  { color: #fbbf24; }
+    .log-line.error { color: #f87171; }
+    .log-line.good  { color: #6ee7b7; }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+    }
+    footer strong { color: var(--purple-l); }
+
+    /* ── DIVIDER ─────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 32px;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <span class="ghost">👻</span>
+    Privacy Shadow
+  </div>
+  <div id="ext-badge">
+    <span class="dot"></span>
+    <span id="ext-label">Checking…</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-ghost">👻</span>
+  <h1>Your kid's<br><span>digital bodyguard</span></h1>
+  <p class="hero-sub">
+    Privacy Shadow watches for personal info as your child types — and stops it before it's shared with strangers online.
+  </p>
+  <div class="platform-pills">
+    <span class="pill active">🐦 Twitter / X</span>
+    <span class="pill active">📸 Instagram</span>
+    <span class="pill active">📘 Facebook</span>
+    <span class="pill active">🎵 TikTok</span>
+    <span class="pill active">💬 Discord</span>
+    <span class="pill active">▶️ YouTube</span>
+    <span class="pill active">🌐 All Sites</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TEST SCENARIOS -->
+<section class="section">
+  <p class="section-label">Interactive Demo</p>
+  <h2 class="section-title">Try typing sensitive info below ↓</h2>
+  <p style="color:var(--muted);margin-top:-20px;margin-bottom:28px;font-size:14px;">
+    With Privacy Shadow installed, typing any of these will trigger a real-time warning dialog.
+    Click <strong style="color:var(--purple-l)">Auto-fill</strong> to instantly load a test scenario.
+  </p>
+
+  <div class="scenarios">
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon red">🎂</div>
+        <div>
+          <div class="card-title">Birthdate + Age</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Kids often casually mention their age or birthday.</p>
+      <textarea class="test-input" id="in-birth" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-birth', 'My birthday is 05/12/2012 and I just turned 13 years old')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon amber">📞</div>
+        <div>
+          <div class="card-title">Phone Number</div>
+        </div>
+      </div>
+      <span class="severity-tag high">⚠️ High</span>
+      <p class="card-desc">Standard and obfuscated phone formats.</p>
+      <textarea class="test-input" id="in-phone" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-phone', 'text me at 555-867-5309 or just call 5558675309')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon red">📍</div>
+        <div>
+          <div class="card-title">Home Address</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Street address, city, state, or ZIP code.</p>
+      <textarea class="test-input" id="in-addr" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-addr', 'I live at 123 Maple Street, Springfield, IL 62701')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon red">💳</div>
+        <div>
+          <div class="card-title">Credit Card</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Visa, Mastercard, Amex, Discover numbers.</p>
+      <textarea class="test-input" id="in-card" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-card', 'My card number is 4111-1111-1111-1111 exp 12/26')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon red">🪪</div>
+        <div>
+          <div class="card-title">SSN / ID Number</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 Critical</span>
+      <p class="card-desc">Social Security Numbers and government IDs.</p>
+      <textarea class="test-input" id="in-ssn" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-ssn', 'SSN: 123-45-6789 passport: A87654321')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon purple">🏫</div>
+        <div>
+          <div class="card-title">School + Team Name</div>
+        </div>
+      </div>
+      <span class="severity-tag medium">🔶 Medium</span>
+      <p class="card-desc">School name, team mascot, or sports team.</p>
+      <textarea class="test-input" id="in-school" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-school', 'I go to Lincoln Middle School and I play for the Riverside Eagles')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card">
+      <div class="card-header">
+        <div class="card-icon amber">🚗</div>
+        <div>
+          <div class="card-title">License Plate</div>
+        </div>
+      </div>
+      <span class="severity-tag high">⚠️ High</span>
+      <p class="card-desc">Vehicle license plate numbers.</p>
+      <textarea class="test-input" id="in-plate" rows="2" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" onclick="fill('in-plate', 'My license plate is ABC-1234 if you need it')">Auto-fill</button>
+    </div>
+
+    <div class="scenario-card" style="border-color:rgba(239,68,68,0.4);">
+      <div class="card-header">
+        <div class="card-icon red">💀</div>
+        <div>
+          <div class="card-title">Everything at Once</div>
+        </div>
+      </div>
+      <span class="severity-tag critical">🛑 CRITICAL COMBO</span>
+      <p class="card-desc">Multiple PII types — the worst-case scenario.</p>
+      <textarea class="test-input" id="in-all" rows="3" placeholder="Type here to test…"></textarea>
+      <button class="btn-fill" style="background:#dc2626;" onclick="fill('in-all', `Hi! I'm Jake, 13 years old (born 05/12/2012). I live at 42 Oak Ave, Denver, CO 80201. Call me at 303-555-1234. I go to Lincoln High School. Plate: XYZ-789.`)">Auto-fill Max Risk</button>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WHAT IT DETECTS -->
+<section class="section">
+  <p class="section-label">Detection Engine</p>
+  <h2 class="section-title">What Privacy Shadow catches</h2>
+
+  <div class="types-grid">
+    <div class="type-card">
+      <div class="t-icon">📅</div>
+      <div>
+        <div class="t-name">Birthdates & Age</div>
+        <div class="t-desc">MM/DD/YYYY, "13 years old", "turning 14", grade level</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">📍</div>
+      <div>
+        <div class="t-name">Location</div>
+        <div class="t-desc">City/state, street address, ZIP, GPS coords, "I live in…"</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">📞</div>
+      <div>
+        <div class="t-name">Phone Numbers</div>
+        <div class="t-desc">US formats, international, obfuscated (5551234567)</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">✉️</div>
+      <div>
+        <div class="t-name">Email & Handles</div>
+        <div class="t-desc">Email addresses, @mentions, Discord tags</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">💳</div>
+      <div>
+        <div class="t-name">Credit Cards<span class="t-new">new</span></div>
+        <div class="t-desc">Visa, Mastercard, Amex, Discover — with or without spaces</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">🪪</div>
+      <div>
+        <div class="t-name">SSN & IDs<span class="t-new">new</span></div>
+        <div class="t-desc">Social Security Numbers, passport, driver's license</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">🏫</div>
+      <div>
+        <div class="t-name">School Names</div>
+        <div class="t-desc">School and university names, "I go to…", "I attend…"</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">🏈</div>
+      <div>
+        <div class="t-name">Sports Teams<span class="t-new">new</span></div>
+        <div class="t-desc">Team mascots (Eagles, Tigers…), "I play for the…"</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">🚗</div>
+      <div>
+        <div class="t-name">License Plates<span class="t-new">new</span></div>
+        <div class="t-desc">Standard US plate formats and context-based detection</div>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="t-icon">🖼️</div>
+      <div>
+        <div class="t-name">Image EXIF GPS</div>
+        <div class="t-desc">GPS coordinates embedded in photo metadata</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PLATFORM COVERAGE -->
+<section class="section">
+  <p class="section-label">Platform Coverage</p>
+  <h2 class="section-title">Where it protects kids</h2>
+
+  <div class="plat-grid">
+    <div class="plat-card">
+      <div class="plat-icon">🐦</div>
+      <div class="plat-name">Twitter / X</div>
+      <div class="plat-scope">Tweets · DMs · Replies</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">📸</div>
+      <div class="plat-name">Instagram</div>
+      <div class="plat-scope">Captions · Comments · DMs · Bio</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">📘</div>
+      <div class="plat-name">Facebook</div>
+      <div class="plat-scope">Posts · Comments · Messenger</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">🎵</div>
+      <div class="plat-name">TikTok</div>
+      <div class="plat-scope">Comments · Bio · Captions</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">💬</div>
+      <div class="plat-name">Discord</div>
+      <div class="plat-scope">Messages · Channels · DMs</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">▶️</div>
+      <div class="plat-name">YouTube</div>
+      <div class="plat-scope">Comments · Community Posts</div>
+    </div>
+    <div class="plat-card">
+      <div class="plat-icon">🌐</div>
+      <div class="plat-name">All Websites</div>
+      <div class="plat-scope">Every text field, everywhere</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ACTIVITY LOG -->
+<section class="section">
+  <p class="section-label">Live Activity</p>
+  <h2 class="section-title">Extension console</h2>
+
+  <div class="log-wrap">
+    <div class="log-header">
+      <span>Extension activity log</span>
+      <button class="log-clear" onclick="clearLog()">Clear</button>
+    </div>
+    <div id="logOutput">
+      <div class="log-line info">[INFO] Page loaded — waiting for Privacy Shadow…</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Built with ❤️ for kids' safety · <strong>Privacy Shadow</strong> · Hackathon 2026
+</footer>
+
+<script>
+  // ── Logging ──────────────────────────────────────────────────
+  const logEl = document.getElementById('logOutput');
+  function addLog(msg, type = 'info') {
+    const line = document.createElement('div');
+    line.className = `log-line ${type}`;
+    const ts = new Date().toLocaleTimeString();
+    line.textContent = `[${ts}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function clearLog() { logEl.innerHTML = ''; }
+
+  const _log   = console.log;
+  const _warn  = console.warn;
+  const _error = console.error;
+  console.log   = (...a) => { _log(...a);   addLog(a.join(' '), 'info'); };
+  console.warn  = (...a) => { _warn(...a);  addLog(a.join(' '), 'warn'); };
+  console.error = (...a) => { _error(...a); addLog(a.join(' '), 'error'); };
+
+  // ── Extension status ─────────────────────────────────────────
+  const badge = document.getElementById('ext-badge');
+  const label = document.getElementById('ext-label');
+
+  function checkExtension() {
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      badge.className = 'inactive';
+      label.textContent = 'Extension not found';
+      addLog('Chrome extension API not available — load this page in Chrome with the extension installed', 'warn');
+      return;
+    }
+    const tid = setTimeout(() => {
+      badge.className = 'inactive';
+      label.textContent = 'Not responding';
+      addLog('Extension timeout — is it installed and enabled?', 'error');
+    }, 2000);
+    chrome.runtime.sendMessage({ type: 'DETECT_PII', text: 'test' }, res => {
+      clearTimeout(tid);
+      if (chrome.runtime.lastError) {
+        badge.className = 'inactive';
+        label.textContent = 'Not installed';
+        addLog('Extension error: ' + chrome.runtime.lastError.message, 'error');
+      } else {
+        badge.className = 'active';
+        label.textContent = 'Active & protecting';
+        addLog('✅ Privacy Shadow is active! Real-time detection is ON.', 'good');
+      }
+    });
+  }
+
+  // ── Auto-fill helper ─────────────────────────────────────────
+  function fill(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = text;
+    // Dispatch native input event so the extension's listener fires
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.focus();
+    addLog(`Filled "${id}" with test data — watch for the Privacy Shadow overlay!`, 'warn');
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  setTimeout(checkExtension, 800);
+  addLog('Demo page ready. Click "Auto-fill" on any scenario to test.', 'info');
+</script>
+</body>
+</html>
     <style>
         body {
             font-family: Arial, sans-serif;

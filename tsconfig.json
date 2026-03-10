@@ -39,6 +39,10 @@
     "build",
     "archive",
     ".plasmo",
-    "extension/**/__tests__/**"
+    "extension/**/__tests__/**",
+    "extension/contents/instagram-stranger-monitor.ts",
+    "extension/components/StrangerAlert.tsx",
+    "extension/detection/ml-model.ts",
+    "extension/detection/ml-features.ts"
   ]
 }

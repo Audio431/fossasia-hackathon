@@ -57,24 +57,45 @@ const PLATFORM_SELECTORS = {
 
   twitter: {
     posts: [
+      // Tweet compose area (current X/Twitter)
+      'div[data-testid="tweetTextarea_0"]',
+      'div[data-testid="tweetTextarea_0_label"]',
       'div[aria-label="Tweet text"]',
+      'div[aria-label="Post text"]',
       'div[data-testid="tweetText"]',
-      'div[lang]', // Tweet content
+      'div[lang]',
     ],
     messages: [
+      // DM compose
+      'div[data-testid="dmComposerTextInput"]',
       'div[data-testid="messageEntry"]',
       'div[data-testid="conversation"]',
+    ],
+    reply: [
+      'div[aria-label*="Reply"]',
+      'div[data-testid="reply"]',
     ],
   },
 
   facebook: {
     posts: [
-      'div[data-testid="post_message"]',
+      // News feed post composer
+      'div[contenteditable="true"][aria-label*="mind"]',
+      'div[contenteditable="true"][aria-label*="Write something"]',
+      // Story / reel captions
+      'div[contenteditable="true"][aria-label*="story"]',
       'div[role="feed"] div[role="article"]',
-      'div[class*="text"]',
+      'div[data-testid="post_message"]',
+    ],
+    comments: [
+      // Comment input boxes
+      'div[contenteditable="true"][aria-label*="comment"]',
+      'div[contenteditable="true"][aria-label*="Comment"]',
     ],
     messages: [
-      'div[data-pagelet="chattab"]',
+      // Messenger
+      'div[contenteditable="true"][aria-label*="Message"]',
+      'div[contenteditable="true"][data-lexical-editor]',
       'div[class*="message"]',
     ],
   },
@@ -83,18 +104,33 @@ const PLATFORM_SELECTORS = {
     posts: [
       'div[data-e2e="comment-desc"]',
       'div[class*="comment"]',
+      'span[data-e2e="video-desc"]',
+    ],
+    inputs: [
+      // Comment input
+      'div[contenteditable="true"][placeholder*="comment"]',
+      'div[contenteditable="true"][data-e2e*="comment"]',
+      'div[class*="commentInput"]',
     ],
     bio: [
       'h2[class*="author"]',
+      'h2[data-e2e="user-bio"]',
+      'div[data-e2e="user-bio"]',
       'div[class*="desc"]',
     ],
   },
 
   discord: {
     messages: [
-      'div[data-slate-node="text"]',
+      // Already-rendered messages
       'div[class*="messageContent"]',
       'li[class*="message"]',
+    ],
+    inputs: [
+      // Message compose area
+      'div[contenteditable="true"][data-slate-editor]',
+      'div[role="textbox"][aria-multiline="true"]',
+      'div[aria-label*="Message"]',
     ],
   },
 
@@ -102,6 +138,11 @@ const PLATFORM_SELECTORS = {
     comments: [
       'yt-formatted-string#content-text',
       'ytd-comment-renderer #content-text',
+    ],
+    inputs: [
+      // Comment composer
+      'div#contenteditable-root[contenteditable="true"]',
+      'ytd-commentbox div[contenteditable="true"]',
     ],
   },
 };

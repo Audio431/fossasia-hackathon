@@ -61,6 +61,62 @@ describe('PII Detector', () => {
       expect(detected[0].type).toBe('location');
     });
 
+    it('should detect SSN with dashes', () => {
+      const text = 'My SSN is 123-45-6789';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'financial')).toBe(true);
+    });
+
+    it('should detect credit card numbers', () => {
+      const text = 'Card number: 4111-1111-1111-1111';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'financial')).toBe(true);
+    });
+
+    it('should detect obfuscated phone numbers (bare 10 digits)', () => {
+      const text = 'Call me: 5551234567';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'contact')).toBe(true);
+    });
+
+    it('should detect license plate with context', () => {
+      const text = 'My license plate is ABC-1234';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'identity')).toBe(true);
+    });
+
+    it('should detect school team mascot name', () => {
+      const text = 'Go Springfield Eagles!';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'school')).toBe(true);
+    });
+
+    it('should detect "I play for [team]"', () => {
+      const text = 'I play for the Riverside Tigers';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'school')).toBe(true);
+    });
+
+    it('should detect passport with context clue', () => {
+      const text = 'passport number: A12345678';
+      const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
+
+      expect(detected.length).toBeGreaterThan(0);
+      expect(detected.some(d => d.type === 'identity')).toBe(true);
+    });
+
     it('should not detect false positives', () => {
       const text = 'Hello world, how are you?';
       const detected = detectPII(text, { platform: 'generic', isPublic: false, isDirectMessage: false });
@@ -122,6 +178,15 @@ describe('PII Detector', () => {
       const detected = [
         { type: 'contact', severity: 'high', description: 'Phone', matchedText: '123-456-7890', position: { start: 0, end: 12 } },
         { type: 'school', severity: 'medium', description: 'School', matchedText: 'Springfield High', position: { start: 13, end: 28 } }
+      ] as DetectedPII[];
+
+      expect(hasHighRiskCombinations(detected)).toBe(true);
+    });
+
+    it('should detect financial + address combination', () => {
+      const detected = [
+        { type: 'financial', severity: 'high', description: 'Credit card', matchedText: '4111-1111-1111-1111', position: { start: 0, end: 19 } },
+        { type: 'address', severity: 'high', description: 'Address', matchedText: '123 Main St', position: { start: 20, end: 31 } }
       ] as DetectedPII[];
 
       expect(hasHighRiskCombinations(detected)).toBe(true);

@@ -200,72 +200,18 @@ async function handleFileInput(event: Event): Promise<void> {
 /**
  * Show warning about image metadata
  */
-function showImageWarning(risk: any, metadata: ImageMetadata): void {
-  // Create warning overlay
-  const warning = document.createElement('div');
-  warning.className = 'privacy-shadow-image-warning';
-  warning.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    z-index: 999999;
-    max-width: 400px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  `;
-
-  let warningContent = `
-    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-      <span style="font-size: 32px; margin-right: 12px;">📍</span>
-      <div>
-        <h3 style="margin: 0; font-size: 18px; color: #1f2937;">Location Data in Photo!</h3>
-        <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">This photo contains GPS coordinates</p>
-      </div>
-    </div>
-  `;
-
-  if (metadata.hasGPS && metadata.latitude && metadata.longitude) {
-    warningContent += `
-      <div style="background: #fef3c7; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-        <p style="margin: 0; font-size: 14px; color: #92400e;">
-          <strong>Location:</strong> ${getLocationDescription(metadata.latitude, metadata.longitude)}
-        </p>
-      </div>
-    `;
+function showImageWarning(_risk: any, metadata: ImageMetadata): void {
+  const reasons = ['Photo contains GPS location data'];
+  if (metadata.hasCameraInfo) reasons.push('Camera make/model information');
+  if (metadata.hasDateTime) reasons.push('Date and time photo was taken');
+  if (metadata.latitude && metadata.longitude) {
+    reasons.push(`Location: ${getLocationDescription(metadata.latitude, metadata.longitude)}`);
   }
 
-  warningContent += `
-    <div style="background: #f3f4f6; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-      <p style="margin: 0; font-size: 13px; color: #4b5563;">
-        This information shows where the photo was taken. Consider removing this data before sharing.
-      </p>
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <button id="privacy-shadow-remove-exif" style="flex: 1; background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-        Remove Location Data
-      </button>
-      <button id="privacy-shadow-keep-exif" style="flex: 1; background: #e5e7eb; color: #374151; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-        Keep As Is
-      </button>
-    </div>
-  `;
-
-  warning.innerHTML = warningContent;
-  document.body.appendChild(warning);
-
-  // Add event listeners
-  document.getElementById('privacy-shadow-remove-exif')?.addEventListener('click', () => {
-    warning.remove();
-    // Would trigger EXIF removal here in production
-    console.log('Privacy Shadow: User chose to remove EXIF data');
-  });
-
-  document.getElementById('privacy-shadow-keep-exif')?.addEventListener('click', () => {
-    warning.remove();
-    console.log('Privacy Shadow: User chose to keep EXIF data');
+  showPrivacyAlert({
+    risk: { level: 'high', score: 60, reasons },
+    onContinue: () => console.log('Privacy Shadow: User chose to keep image metadata'),
+    onCancel: () => console.log('Privacy Shadow: User chose to remove EXIF data'),
   });
 }
 
