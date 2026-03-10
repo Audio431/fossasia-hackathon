@@ -30,10 +30,10 @@ test.describe('Demo page UI', () => {
     await expect(page.locator('#ext-badge')).toBeVisible();
   });
 
-  test('shows all 8 scenario cards', async ({ page }) => {
+  test('shows all 12 scenario cards', async ({ page }) => {
     await page.goto(TEST_PAGE);
     const cards = page.locator('.scenario-card');
-    await expect(cards).toHaveCount(8);
+    await expect(cards).toHaveCount(12);
   });
 
   test('shows detection types grid with 10 items', async ({ page }) => {
@@ -42,10 +42,10 @@ test.describe('Demo page UI', () => {
     await expect(typeCards).toHaveCount(10);
   });
 
-  test('shows 7 platform cards', async ({ page }) => {
+  test('shows 8 platform cards', async ({ page }) => {
     await page.goto(TEST_PAGE);
     const platCards = page.locator('.plat-card');
-    await expect(platCards).toHaveCount(7);
+    await expect(platCards).toHaveCount(8);
   });
 });
 
@@ -142,5 +142,39 @@ test.describe('Activity log', () => {
     await page.locator('.log-clear').click();
     const lineCount = await page.locator('#logOutput .log-line').count();
     expect(lineCount).toBe(0);
+  });
+});
+
+test.describe('Stranger detection demo', () => {
+  test('grooming section is visible', async ({ page }) => {
+    await page.goto(TEST_PAGE);
+    await expect(page.locator('#grooming')).toBeVisible();
+  });
+
+  test('shows 4 stranger scenario cards', async ({ page }) => {
+    await page.goto(TEST_PAGE);
+    const cards = page.locator('#grooming .scenario-card');
+    await expect(cards).toHaveCount(4);
+  });
+
+  test('secrecy scenario fills correctly', async ({ page }) => {
+    await page.goto(TEST_PAGE);
+    await page.locator('#in-s1').evaluate((el: HTMLTextAreaElement) => {
+      el.value = "Don't tell your parents";
+      el.dispatchEvent(new Event('input'));
+    });
+    await expect(page.locator('#in-s1')).not.toBeEmpty();
+  });
+
+  test('stranger inputs have stranger-input class', async ({ page }) => {
+    await page.goto(TEST_PAGE);
+    const strangerInputs = page.locator('.stranger-input');
+    await expect(strangerInputs).toHaveCount(4);
+  });
+
+  test('grooming section has a section heading', async ({ page }) => {
+    await page.goto(TEST_PAGE);
+    const heading = page.locator('#grooming .section-title');
+    await expect(heading).toContainText('Grooming');
   });
 });

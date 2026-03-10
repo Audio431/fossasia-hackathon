@@ -42,7 +42,15 @@
     "extension/**/__tests__/**",
     "extension/contents/instagram-stranger-monitor.ts",
     "extension/components/StrangerAlert.tsx",
+    "extension/components/KidAlert.tsx",
+    "extension/components/ParentPopup.tsx",
+    "extension/components/ConversationTimelineAnalyzer.tsx",
+    "extension/components/StrangerAnalytics.tsx",
+    "extension/components/RealTimeMonitor.tsx",
+    "extension/components/OnlineSafetyEducation.tsx",
     "extension/detection/ml-model.ts",
-    "extension/detection/ml-features.ts"
+    "extension/detection/ml-features.ts",
+    "extension/content-scripts/**/*",
+    "extension/core/**/*"
   ]
 }
