@@ -16,7 +16,7 @@
 import { test, expect, Page } from '@playwright/test';
 import path from 'path';
 
-const TEST_PAGE = `file://${path.resolve(__dirname, '../test.html')}`;
+const TEST_PAGE = `file://${path.resolve(__dirname, 'demo-pages/test.html')}`;
 
 test.describe('Demo page UI', () => {
   test('loads and shows the Privacy Shadow hero', async ({ page }) => {
