@@ -9,6 +9,8 @@ export interface AlertOptions {
     level: string;
     score: number;
     reasons: string[];
+    /** PII types detected — used to pick educational tip */
+    detectedTypes?: string[];
     recommendations?: string[];
   };
   onContinue: () => void;
@@ -24,12 +26,31 @@ const COLORS: Record<string, { bg: string; border: string; emoji: string; title:
   low:      { bg: '#eff6ff', border: '#3b82f6', emoji: '💡', title: 'Just checking...' },
 };
 
+/** Kid-friendly educational tips keyed by detected PII type. */
+const EDU_TIPS: Record<string, string> = {
+  birthdate:  '🎂 Sharing your birthday or age helps strangers figure out who you are.',
+  location:   '📍 Telling people where you live can help strangers find you in real life.',
+  contact:    '📞 Only share your phone number with people you already know and trust.',
+  address:    '🏠 Your home address is private — sharing it can put your whole family at risk.',
+  school:     '🏫 Your school name can help strangers find you — keep it between friends.',
+  financial:  '💳 Never share credit card or bank numbers online. Even with friends!',
+  identity:   '🪪 ID numbers like SSNs can be used to steal your identity. Keep them secret.',
+  image:      '📸 Photos can contain hidden GPS data that reveals exactly where you were.',
+};
+
+function pickTip(detectedTypes: string[]): string {
+  for (const t of detectedTypes) {
+    if (EDU_TIPS[t]) return EDU_TIPS[t];
+  }
+  return '💡 Think before you share — information posted online can last forever.';
+}
+
 export function showPrivacyAlert(options: AlertOptions): void {
-  // Remove any existing overlay
   dismissPrivacyAlert();
 
   const { risk, onContinue, onCancel } = options;
   const c = COLORS[risk.level] || COLORS.medium;
+  const tip = pickTip(risk.detectedTypes || []);
 
   const overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
@@ -57,7 +78,7 @@ export function showPrivacyAlert(options: AlertOptions): void {
       background:white;
       border-radius:16px;
       padding:24px;
-      max-width:380px;
+      max-width:400px;
       width:90%;
       box-shadow:0 20px 60px rgba(0,0,0,0.4);
       border-top:5px solid ${c.border};
@@ -76,17 +97,21 @@ export function showPrivacyAlert(options: AlertOptions): void {
         <p style="margin:6px 0 0;font-size:14px;color:#6b7280;">Privacy Shadow detected sensitive info</p>
       </div>
 
-      <div style="background:${c.bg};border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+      <div style="background:${c.bg};border-radius:10px;padding:12px 16px;margin-bottom:12px;">
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151;">You're about to share:</p>
         <ul style="margin:0;padding:0;list-style:none;">${reasonsHTML}</ul>
       </div>
 
       ${recsHTML ? `
-      <div style="margin-bottom:16px;">
+      <div style="margin-bottom:12px;">
         <ul style="margin:0;padding:0;list-style:none;">${recsHTML}</ul>
       </div>` : ''}
 
-      <p style="font-size:13px;color:#6b7280;margin:0 0 16px;padding:10px;background:#f9fafb;border-radius:8px;">
+      <div style="padding:10px 12px;background:#f0fdf4;border-radius:8px;margin-bottom:14px;border-left:3px solid #22c55e;">
+        <p style="font-size:13px;color:#166534;margin:0;line-height:1.5;">${tip}</p>
+      </div>
+
+      <p style="font-size:12px;color:#9ca3af;margin:0 0 14px;text-align:center;">
         This info can be seen by people you don't know and could last forever online.
       </p>
 

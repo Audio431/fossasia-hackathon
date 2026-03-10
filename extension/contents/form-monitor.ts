@@ -6,6 +6,7 @@
 import type { PlasmoCSConfig } from "plasmo";
 import { detectPII } from '../detection/pii-detector';
 import { showPrivacyAlert } from '../utils/alert-overlay';
+import { loadSettings, isQuietHours, SENSITIVITY_THRESHOLDS } from '../utils/settings';
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"],
@@ -48,9 +49,9 @@ function attachInputMonitor(el: Element): void {
   let timer: ReturnType<typeof setTimeout>;
   let lastChecked = '';
 
-  el.addEventListener('input', () => {
+  el.addEventListener('input', async () => {
     clearTimeout(timer);
-    timer = setTimeout(() => {
+    timer = setTimeout(async () => {
       const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
         ? el.value
         : (el as HTMLElement).innerText || '';
@@ -67,8 +68,14 @@ function attachInputMonitor(el: Element): void {
 
       if (detected.length === 0) return;
 
-      const reasons = [...new Set(detected.map(p => p.description))];
+      // Check settings: quiet hours and sensitivity threshold
+      const settings = await loadSettings();
+      if (isQuietHours(settings)) return;
+
+      const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];
       const score = Math.min(detected.length * 30, 100);
+
+      const reasons = [...new Set(detected.map(p => p.description))];
       const level: string = score >= 60 ? 'critical' : score >= 30 ? 'high' : 'medium';
 
       chrome.runtime.sendMessage({
@@ -77,7 +84,7 @@ function attachInputMonitor(el: Element): void {
       }).catch(() => {});
 
       showPrivacyAlert({
-        risk: { level, score, reasons },
+        risk: { level, score, reasons, detectedTypes: detected.map(p => p.type) },
         onContinue: () => { lastChecked = value; },
         onCancel: () => {
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {

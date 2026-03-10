@@ -1,27 +1,21 @@
 /**
  * Privacy Shadow Background Service Worker
- * Ultra-simple version for hackathon demo
  */
+
+import { loadSettings, SENSITIVITY_THRESHOLDS } from './extension/utils/settings';
 
 console.log('👻 Privacy Shadow: Starting...');
 
-/**
- * Simple in-memory alert storage
- * In production, this would use Chrome Storage API
- */
 const alerts: any[] = [];
 
-/**
- * Calculate risk score from detected PII
- */
 function calculateRiskScore(detectedPII: any[]): { score: number; level: string; reasons: string[] } {
   const reasons = detectedPII.map(pii => pii.description);
   let score = detectedPII.length * 30;
 
   return {
     score: Math.min(score, 100),
-    level: score > 50 ? 'high' : score > 25 ? 'medium' : 'low',
-    reasons: [...new Set(reasons)] // Deduplicate
+    level: score >= 60 ? 'critical' : score >= 30 ? 'high' : score >= 15 ? 'medium' : 'low',
+    reasons: [...new Set(reasons)]
   };
 }
 
@@ -59,33 +53,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'DETECT_PII') {
-    // Simple PII detection for demo
+    // Used by demo page and popup to test detection
     const text = message.text || '';
     const hasBirthday = /\d{1,2}\/\d{1,2}\/\d{4}/.test(text);
-    const hasPhone = /\d{3}-\d{3}-\d{4}/.test(text);
+    const hasPhone = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(text);
     const hasEmail = /[\w\.-]+@[\w\.-]+\.\w{2,}/.test(text);
 
-    const detected = [];
-    const reasons = [];
+    const detected: any[] = [];
+    const reasons: string[] = [];
 
-    if (hasBirthday) {
-      detected.push({ type: 'birthdate', description: 'Birth date' });
-      reasons.push('Birth date');
-    }
-    if (hasPhone) {
-      detected.push({ type: 'contact', description: 'Phone number' });
-      reasons.push('Phone number');
-    }
-    if (hasEmail) {
-      detected.push({ type: 'contact', description: 'Email address' });
-      reasons.push('Email address');
-    }
+    if (hasBirthday) { detected.push({ type: 'birthdate', description: 'Birth date' }); reasons.push('Birth date'); }
+    if (hasPhone)    { detected.push({ type: 'contact',   description: 'Phone number' }); reasons.push('Phone number'); }
+    if (hasEmail)    { detected.push({ type: 'contact',   description: 'Email address' }); reasons.push('Email address'); }
 
     const riskScore = detected.length * 30;
     const risk = {
       score: Math.min(riskScore, 100),
-      level: riskScore > 50 ? 'high' : riskScore > 25 ? 'medium' : 'low',
-      reasons: reasons,
+      level: riskScore >= 60 ? 'critical' : riskScore >= 30 ? 'high' : riskScore >= 15 ? 'medium' : 'low',
+      reasons,
       shouldAlertKid: riskScore >= 25,
       shouldAlertParent: riskScore >= 50,
     };
@@ -94,61 +79,77 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  if (message.type === 'GET_SETTINGS') {
+    loadSettings().then(settings => sendResponse({ settings }));
+    return true; // async
+  }
+
+  if (message.type === 'SAVE_SETTINGS') {
+    const { saveSettings } = require('./extension/utils/settings');
+    saveSettings(message.settings).then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
   if (message.type === 'SOCIAL_POST_DETECTED') {
-    // Handle PII detected in social media posts/comments
     console.log('👻 Social post PII detected:', message.data);
 
     const { pii, context, textPreview } = message.data;
     const risk = calculateRiskScore(pii);
 
-    const alert = {
-      type: 'social_post',
-      risk,
-      context: {
-        platform: context.platform,
-        website: context.platform,
-        url: sender.tab?.url || 'unknown'
-      },
-      pii: pii.map(p => ({ type: p.type, description: p.description })),
-      preview: textPreview
-    };
+    loadSettings().then(settings => {
+      const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];
+      const alert = {
+        type: 'social_post',
+        risk,
+        context: {
+          platform: context.platform,
+          website: context.platform,
+          url: sender.tab?.url || 'unknown'
+        },
+        pii: pii.map((p: any) => ({ type: p.type, description: p.description })),
+        preview: textPreview
+      };
 
-    storeAlert(alert);
+      storeAlert(alert);
 
-    // Send response to content script
-    sendResponse({
-      block: risk.score >= 25,
-      risk
+      sendResponse({
+        block: risk.score >= threshold,
+        risk,
+        threshold,
+      });
     });
 
     return true;
+
   }
 
   if (message.type === 'FORM_SUBMISSION') {
-    // Handle PII detected in form submissions
     console.log('👻 Form submission PII detected:', message.data);
 
     const { pii, context } = message.data;
     const risk = calculateRiskScore(pii);
 
-    const alert = {
-      type: 'form_submission',
-      risk,
-      context: {
-        platform: context.platform,
-        website: context.platform,
-        url: sender.tab?.url || 'unknown',
-        formType: context.formType
-      },
-      pii: pii.map(p => ({ type: p.type, description: p.description }))
-    };
+    loadSettings().then(settings => {
+      const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];
+      const alert = {
+        type: 'form_submission',
+        risk,
+        context: {
+          platform: context.platform,
+          website: context.platform,
+          url: sender.tab?.url || 'unknown',
+          formType: context.formType
+        },
+        pii: pii.map((p: any) => ({ type: p.type, description: p.description }))
+      };
 
-    storeAlert(alert);
+      storeAlert(alert);
 
-    // Send response to content script
-    sendResponse({
-      block: risk.score >= 25,
-      risk
+      sendResponse({
+        block: risk.score >= threshold,
+        risk,
+        threshold,
+      });
     });
 
     return true;
