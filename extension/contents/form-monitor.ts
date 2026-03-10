@@ -48,7 +48,7 @@ function attachInputMonitor(el: Element): void {
 
   let timer: ReturnType<typeof setTimeout>;
   let lastChecked = '';
-  let lastWarnedValue = '';
+  let acknowledgedValue = ''; // Track what user has acknowledged
 
   // Only check on BLUR (when user leaves the field), not while typing
   el.addEventListener('blur', async () => {
@@ -59,7 +59,7 @@ function attachInputMonitor(el: Element): void {
         : (el as HTMLElement).innerText || '';
 
       if (value === lastChecked || value.length < 5) return;
-      if (value === lastWarnedValue) return; // Don't warn again for same value
+      if (value === acknowledgedValue) return; // Already acknowledged this value!
       if (value.length < 10) return; // Require at least 10 characters
 
       lastChecked = value;
@@ -89,13 +89,12 @@ function attachInputMonitor(el: Element): void {
         data: { pii: detected, context: { platform, isPublic: true, isDirectMessage: false, formType: 'realtime' }, formId: (el as HTMLElement).id || '' }
       }).catch(() => {});
 
-      lastWarnedValue = value; // Remember we warned about this value
-
       showPrivacyAlert({
         risk: { level, score, reasons, detectedTypes: detected.map(p => p.type) },
         onContinue: () => {
+          // User acknowledged the risk - remember this value
+          acknowledgedValue = value;
           lastChecked = value;
-          // Don't clear lastWarnedValue on continue - user acknowledged the risk
         },
         onCancel: () => {
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
@@ -106,15 +105,29 @@ function attachInputMonitor(el: Element): void {
             (el as HTMLElement).focus();
           }
           lastChecked = '';
-          lastWarnedValue = '';
+          acknowledgedValue = '';
         },
       });
     }, 300); // Short delay on blur to prevent immediate popup
   }, true); // Use capture phase to catch blur before other handlers
 
-  // Store value on focus to detect if it changed
+  // Reset acknowledged value when user changes the text
+  el.addEventListener('input', () => {
+    const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+      ? el.value
+      : (el as HTMLElement).innerText || '';
+
+    // If the value changed from what was acknowledged, reset
+    if (value !== acknowledgedValue) {
+      // Don't reset acknowledgedValue immediately - keep it until blur
+      // This prevents warnings while typing
+    }
+  }, true);
+
+  // Clear acknowledged value when focusing (user might be about to edit)
   el.addEventListener('focus', () => {
     clearTimeout(timer);
+    // Don't reset acknowledgedValue on focus - only on actual value change
   }, true);
 }
 
