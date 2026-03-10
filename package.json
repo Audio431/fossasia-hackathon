@@ -1,0 +1,48 @@
+{
+  "name": "safechild",
+  "displayName": "SafeChild - Protect Kids Online",
+  "version": "0.1.0",
+  "description": "Browser extension that warns children when they share personal information on social media and scores harm level in real-time",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Audio431/fossasia-hackathon.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Audio431/fossasia-hackathon/issues"
+  },
+  "homepage": "https://github.com/Audio431/fossasia-hackathon#readme",
+  "dependencies": {
+    "@plasmohq/storage": "^1.15.0",
+    "plasmo": "^0.90.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.37",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "manifest": {
+    "permissions": [
+      "storage",
+      "activeTab",
+      "notifications"
+    ],
+    "host_permissions": [
+      "https://*.instagram.com/*",
+      "https://*.facebook.com/*",
+      "https://messenger.com/*",
+      "https://web.whatsapp.com/*",
+      "https://*.tiktok.com/*",
+      "https://*.discord.com/*"
+    ]
+  }
+}
