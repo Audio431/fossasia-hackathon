@@ -1,16 +1,39 @@
-import { addDetectionEvent, getDetectionEvents } from "../lib/storage"
-import type { DetectionEvent } from "../lib/types"
+import { addDetectionEvent, getDetectionEvents, getSettings } from "../lib/storage"
+import type { DetectionEvent, ParentNotificationConfig } from "../lib/types"
 
 // Listen for PII detection events from content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "PII_DETECTED") {
     const event: DetectionEvent = message.event
-    addDetectionEvent(event).then(() => {
+    addDetectionEvent(event).then(async () => {
       updateBadge()
       showNotification(event)
+      // Send SMS to parent if high/critical
+      if (event.harmScore.level === "high" || event.harmScore.level === "critical") {
+        await sendParentSMS(event)
+      }
       sendResponse({ success: true })
     })
     return true // async response
+  }
+
+  if (message.type === "TEST_SMS") {
+    const testEvent: DetectionEvent = {
+      id: "test-" + Date.now(),
+      timestamp: Date.now(),
+      platform: "Test",
+      url: "https://example.com",
+      message: "This is a test alert",
+      detections: [{ category: "full_name", match: "John Smith", confidence: 0.9, position: { start: 0, end: 10 } }],
+      harmScore: { total: 75, breakdown: { full_name: 20, address: 0, phone: 25, email: 0, school: 25, age_dob: 0, location: 0 }, level: "high" },
+      blocked: true,
+    }
+    sendParentSMS(testEvent).then(() => {
+      sendResponse({ success: true })
+    }).catch((err) => {
+      sendResponse({ success: false, error: String(err) })
+    })
+    return true
   }
 
   if (message.type === "GET_EVENTS") {
@@ -99,7 +122,7 @@ function showNotification(event: DetectionEvent) {
 
   chrome.notifications.create(event.id, {
     type: "basic",
-    iconUrl: chrome.runtime.getURL("icon128.plasmo.png"),
+    iconUrl: chrome.runtime.getURL(chrome.runtime.getManifest().icons?.["128"] || "icon128.png"),
     title,
     message: `Personal info detected on ${event.platform}: ${categories} (Score: ${event.harmScore.total}/100)`,
     priority: event.harmScore.level === "critical" ? 2 : 1,
@@ -107,6 +130,54 @@ function showNotification(event: DetectionEvent) {
       event.harmScore.level === "critical" ||
       event.harmScore.level === "high",
   })
+}
+
+async function sendParentSMS(event: DetectionEvent) {
+  const settings = await getSettings()
+  const config = settings.parentNotification
+  if (!config?.enabled || !config.parentPhone) return
+
+  // Use env vars as fallback for Twilio credentials
+  const accountSid = config.twilioAccountSid || process.env.PLASMO_PUBLIC_TWILIO_ACCOUNT_SID || ""
+  const authToken = config.twilioAuthToken || process.env.PLASMO_PUBLIC_TWILIO_AUTH_TOKEN || ""
+  const fromNumber = config.twilioFromNumber || process.env.PLASMO_PUBLIC_TWILIO_FROM_NUMBER || ""
+
+  if (!accountSid || !authToken || !fromNumber) return
+
+  const categories = event.detections
+    .map((d) => d.category.replace("_", " "))
+    .join(", ")
+
+  const body =
+    `[SafeChild Alert] Your child shared sensitive info (${categories}) ` +
+    `on ${event.platform}. Risk: ${event.harmScore.total}/100 (${event.harmScore.level}). ` +
+    `Please check in with them.`
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+  const auth = btoa(`${accountSid}:${authToken}`)
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: config.parentPhone,
+        From: fromNumber,
+        Body: body,
+      }),
+    })
+
+    if (!res.ok) {
+      console.error("SafeChild SMS failed:", res.status, await res.text())
+    } else {
+      console.log("SafeChild SMS sent to parent:", config.parentPhone)
+    }
+  } catch (err) {
+    console.error("SafeChild SMS error:", err)
+  }
 }
 
 // Initialize badge on install/update

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Shadow - Parent Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <style>
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        .pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .slide-up { animation: slide-up 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="react,typescript">
+        const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = Motion;
+
+        // Mock data for dashboard
+        const dashboardData = {
+            stats: {
+                totalStrangerContacts: 47,
+                highRiskInteractions: 8,
+                avgRiskScore: 34.5,
+                activeConversations: 12
+            },
+            recentAlerts: [
+                { id: 1, type: 'critical', message: 'Grooming pattern detected', time: '2 min ago', platform: 'Instagram' },
+                { id: 2, type: 'high', message: 'Personal info request', time: '15 min ago', platform: 'Instagram' },
+                { id: 3, type: 'medium', message: 'Unknown contact in group chat', time: '1 hour ago', platform: 'Discord' },
+            ],
+            strangerProfiles: [
+                { id: 1, username: 'coolguy_2024', riskScore: 92, platform: 'Instagram', interactions: 4, lastContact: '2 min ago', riskLevel: 'critical' },
+                { id: 2, username: 'understand_me', riskScore: 85, platform: 'Instagram', interactions: 6, lastContact: '15 min ago', riskLevel: 'high' },
+                { id: 3, username: 'gamer_xyz', riskScore: 67, platform: 'Discord', interactions: 12, lastContact: '1 hour ago', riskLevel: 'high' },
+                { id: 4, username: 'newfriend123', riskScore: 45, platform: 'TikTok', interactions: 8, lastContact: '3 hours ago', riskLevel: 'medium' },
+            ],
+            riskTrends: [
+                { date: 'Mon', risk: 25, interactions: 8 },
+                { date: 'Tue', risk: 35, interactions: 12 },
+                { date: 'Wed', risk: 45, interactions: 15 },
+                { date: 'Thu', risk: 65, interactions: 18 },
+                { date: 'Fri', risk: 78, interactions: 22 },
+                { date: 'Sat', risk: 92, interactions: 28 },
+                { date: 'Sun', risk: 85, interactions: 25 },
+            ],
+            platformRisk: [
+                { platform: 'Instagram', risk: 72, interactions: 28 },
+                { platform: 'TikTok', risk: 58, interactions: 12 },
+                { platform: 'Discord', risk: 45, interactions: 15 },
+                { platform: 'Twitter', risk: 32, interactions: 8 },
+            ]
+        };
+
+        const ParentDashboard = () => {
+            const [activeTab, setActiveTab] = useState('overview');
+            const [selectedStranger, setSelectedStranger] = useState(null);
+            const [isLive, setIsLive] = useState(true);
+
+            const getRiskColor = (level) => {
+                switch(level) {
+                    case 'critical': return 'bg-red-500';
+                    case 'high': return 'bg-orange-500';
+                    case 'medium': return 'bg-yellow-500';
+                    case 'low': return 'bg-green-500';
+                    default: return 'bg-gray-500';
+                }
+            };
+
+            const getRiskBgColor = (level) => {
+                switch(level) {
+                    case 'critical': return 'bg-red-50 border-red-200';
+                    case 'high': return 'bg-orange-50 border-orange-200';
+                    case 'medium': return 'bg-yellow-50 border-yellow-200';
+                    case 'low': return 'bg-green-50 border-green-200';
+                    default: return 'bg-gray-50 border-gray-200';
+                }
+            };
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm border-b border-slate-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+                                        <span className="text-2xl">🛡️</span>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold text-slate-900">Privacy Shadow</h1>
+                                        <p className="text-sm text-slate-600">Parent Safety Dashboard</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                        <div className="relative">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <div className="absolute top-0 left-0 w-2 h-2 bg-green-500 rounded-full pulse-ring"></div>
+                                        </div>
+                                        Live Monitoring
+                                    </div>
+                                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                        Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Navigation */}
+                    <nav className="bg-white border-b border-slate-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex space-x-8">
+                                {[
+                                    { id: 'overview', label: 'Overview', icon: '📊' },
+                                    { id: 'strangers', label: 'Strangers', icon: '👤' },
+                                    { id: 'trends', label: 'Trends', icon: '📈' },
+                                    { id: 'analysis', label: 'Analysis', icon: '🔍' },
+                                    { id: 'settings', label: 'Settings', icon: '⚙️' },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors ${
+                                            activeTab === tab.id
+                                                ? 'border-blue-600 text-blue-600'
+                                                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                                        }`}
+                                    >
+                                        <span>{tab.icon}</span>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* Overview Tab */}
+                        {activeTab === 'overview' && (
+                            <div className="space-y-6">
+                                {/* Alert Banner */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-red-50 border-2 border-red-200 rounded-xl p-6"
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className="bg-red-100 p-3 rounded-full">
+                                            <span className="text-2xl">🚨</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold text-red-900 mb-1">Critical Alert Active</h3>
+                                            <p className="text-red-700 mb-3">Grooming pattern detected in Instagram DM. Immediate attention recommended.</p>
+                                            <div className="flex gap-3">
+                                                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                                                    View Conversation
+                                                </button>
+                                                <button className="px-4 py-2 bg-white text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+                                                    Block User
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span className="text-xs text-red-600 font-medium">2 min ago</span>
+                                    </div>
+                                </motion.div>
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    {[
+                                        { title: 'Total Stranger Contacts', value: dashboardData.stats.totalStrangerContacts, icon: '👥', color: 'blue', change: '+5 this week' },
+                                        { title: 'High Risk Interactions', value: dashboardData.stats.highRiskInteractions, icon: '⚠️', color: 'red', change: 'Requires attention' },
+                                        { title: 'Average Risk Score', value: `${dashboardData.stats.avgRiskScore}%`, icon: '📊', color: 'yellow', change: '-3% from last week' },
+                                        { title: 'Active Conversations', value: dashboardData.stats.activeConversations, icon: '💬', color: 'purple', change: '3 ongoing' },
+                                    ].map((stat, index) => (
+                                        <motion.div
+                                            key={index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            className="bg-white rounded-xl shadow-sm p-6 border border-slate-200"
+                                        >
+                                            <div className="flex items-center justify-between mb-4">
+                                                <span className="text-2xl">{stat.icon}</span>
+                                                <span className="text-xs text-slate-500">{stat.change}</span>
+                                            </div>
+                                            <h3 className="text-sm font-medium text-slate-600 mb-1">{stat.title}</h3>
+                                            <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                {/* Recent Activity & Critical Alerts */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="bg-white rounded-xl shadow-sm p-6 border border-slate-200"
+                                    >
+                                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <span>🔔</span> Recent Activity
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {dashboardData.recentAlerts.map(alert => (
+                                                <div key={alert.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                                                    <div className={`w-2 h-2 rounded-full ${getRiskColor(alert.type)} mt-2`}></div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-slate-900">{alert.message}</p>
+                                                        <p className="text-xs text-slate-500">{alert.platform} • {alert.time}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="bg-white rounded-xl shadow-sm p-6 border border-slate-200"
+                                    >
+                                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <span>🚨</span> Critical Alerts
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {dashboardData.strangerProfiles
+                                                .filter(s => s.riskLevel === 'critical' || s.riskLevel === 'high')
+                                                .slice(0, 3)
+                                                .map(stranger => (
+                                                    <div key={stranger.id} className={`p-4 rounded-lg border-2 ${getRiskBgColor(stranger.riskLevel)}`}>
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                                                                <span className="text-lg">👤</span>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="font-semibold text-slate-900">{stranger.username}</p>
+                                                                <p className="text-xs text-slate-600">{stranger.platform}</p>
+                                                            </div>
+                                                            <span className="text-lg font-bold">{stranger.riskScore}%</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs text-slate-600">
+                                                            <span>{stranger.interactions} interactions</span>
+                                                            <span>{stranger.lastContact}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Strangers Tab */}
+                        {activeTab === 'strangers' && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-bold text-slate-900">Stranger Profiles</h2>
+                                    <div className="flex gap-2">
+                                        <select className="px-4 py-2 border border-slate-300 rounded-lg text-sm">
+                                            <option>All Platforms</option>
+                                            <option>Instagram</option>
+                                            <option>Twitter</option>
+                                            <option>TikTok</option>
+                                            <option>Discord</option>
+                                        </select>
+                                        <select className="px-4 py-2 border border-slate-300 rounded-lg text-sm">
+                                            <option>All Risk Levels</option>
+                                            <option>Critical</option>
+                                            <option>High</option>
+                                            <option>Medium</option>
+                                            <option>Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {dashboardData.strangerProfiles.map((stranger, index) => (
+                                        <motion.div
+                                            key={stranger.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            className={`bg-white rounded-xl shadow-sm p-6 border-2 cursor-pointer hover:shadow-md transition-all ${getRiskBgColor(stranger.riskLevel)}`}
+                                            onClick={() => setSelectedStranger(stranger)}
+                                        >
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
+                                                        <span className="text-xl">👤</span>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-slate-900">{stranger.username}</h3>
+                                                        <p className="text-sm text-slate-600 capitalize">{stranger.platform}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={`w-3 h-3 rounded-full ${getRiskColor(stranger.riskLevel)}`}></div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-slate-600">Risk Score</span>
+                                                    <span className="font-bold">{stranger.riskScore}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-200 rounded-full h-2">
+                                                    <div
+                                                        className={`h-2 rounded-full ${getRiskColor(stranger.riskLevel)}`}
+                                                        style={{ width: `${stranger.riskScore}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-600">Interactions</span>
+                                                    <span className="font-medium">{stranger.interactions}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-600">Last Contact</span>
+                                                    <span className="font-medium">{stranger.lastContact}</span>
+                                                </div>
+                                            </div>
+
+                                            <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                                View Details
+                                            </button>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Trends Tab */}
+                        {activeTab === 'trends' && (
+                            <div className="space-y-6">
+                                <h2 className="text-xl font-bold text-slate-900">Risk Trends Over Time</h2>
+
+                                <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                                    <h3 className="text-lg font-semibold mb-6">Weekly Risk Score</h3>
+                                    <div className="h-64 flex items-end justify-around gap-4">
+                                        {dashboardData.riskTrends.map((day, index) => (
+                                            <motion.div
+                                                key={index}
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${day.risk}%` }}
+                                                transition={{ delay: index * 0.1, duration: 0.5 }}
+                                                className="flex-1 flex flex-col items-center gap-2"
+                                            >
+                                                <div className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg relative group cursor-pointer">
+                                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                        {day.risk}% risk
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs text-slate-600 font-medium">{day.date}</span>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <span>📱</span> Platform Risk Distribution
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {dashboardData.platformRisk.map((platform, index) => (
+                                                <div key={index} className="space-y-2">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="font-medium">{platform.platform}</span>
+                                                        <span className="text-slate-600">{platform.risk}% risk</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-200 rounded-full h-3">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${platform.risk}%` }}
+                                                            transition={{ delay: index * 0.1 }}
+                                                            className="h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-slate-500">{platform.interactions} interactions</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <span>⏰</span> Time-Based Risk Patterns
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {[
+                                                { time: 'Morning (6-12)', risk: 25, color: 'bg-green-500' },
+                                                { time: 'Afternoon (12-18)', risk: 35, color: 'bg-yellow-500' },
+                                                { time: 'Evening (18-22)', risk: 55, color: 'bg-orange-500' },
+                                                { time: 'Late Night (22-6)', risk: 78, color: 'bg-red-500' },
+                                            ].map((period, index) => (
+                                                <div key={index} className="flex items-center gap-3">
+                                                    <span className="text-sm text-slate-600 w-32">{period.time}</span>
+                                                    <div className="flex-1 bg-slate-200 rounded-full h-3">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${period.risk}%` }}
+                                                            transition={{ delay: index * 0.1 }}
+                                                            className={`h-3 ${period.color} rounded-full`}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-medium w-12">{period.risk}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Analysis Tab */}
+                        {activeTab === 'analysis' && (
+                            <div className="space-y-6">
+                                <h2 className="text-xl font-bold text-slate-900">Detailed Conversation Analysis</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[
+                                        {
+                                            title: 'Grooming Patterns Detected',
+                                            icon: '🎯',
+                                            count: 12,
+                                            severity: 'high',
+                                            items: [
+                                                'You\'re mature for your age',
+                                                'Your parents don\'t understand',
+                                                'This is our secret',
+                                                'I can buy you things',
+                                            ]
+                                        },
+                                        {
+                                            title: 'Escalation Timeline',
+                                            icon: '📈',
+                                            count: 8,
+                                            severity: 'medium',
+                                            items: [
+                                                'Conversation 1: Normal → Inappropriate in 15 min',
+                                                'Conversation 3: Normal → Personal requests in 5 min',
+                                                'Conversation 7: Rapid escalation pattern',
+                                            ]
+                                        },
+                                        {
+                                            title: 'Risk Factor Breakdown',
+                                            icon: '🔍',
+                                            count: 24,
+                                            severity: 'low',
+                                            items: [
+                                                'No mutual friends: 8 instances',
+                                                'New accounts: 6 instances',
+                                                'Suspicious links: 4 instances',
+                                                'Late night messages: 6 instances',
+                                            ]
+                                        },
+                                    ].map((card, index) => (
+                                        <motion.div
+                                            key={index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            className={`bg-white rounded-xl shadow-sm p-6 border-2 ${
+                                                card.severity === 'high' ? 'border-red-200' :
+                                                card.severity === 'medium' ? 'border-yellow-200' :
+                                                'border-blue-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-2xl">{card.icon}</span>
+                                                <h3 className="text-lg font-semibold">{card.title}</h3>
+                                                <span className="ml-auto bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded-full">
+                                                    {card.count}
+                                                </span>
+                                            </div>
+                                            <ul className="space-y-2">
+                                                {card.items.map((item, i) => (
+                                                    <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                                                        <span className="text-slate-400">•</span>
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-white border-t border-slate-200 mt-8">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                            <div className="flex items-center justify-between text-sm text-slate-600">
+                                <div className="flex items-center gap-4">
+                                    <span>🔒 Privacy Shadow Dashboard</span>
+                                    <span>•</span>
+                                    <span>FOSSASIA Hackathon 2025</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span>Live Monitoring Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ParentDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react"
 
 import { HARM_LEVEL_COLORS } from "../lib/harm-scorer"
-import type { DetectionEvent } from "../lib/types"
+import { getSettings, saveSettings } from "../lib/storage"
+import type { DetectionEvent, ParentNotificationConfig } from "../lib/types"
 
 import "./popup.css"
 
@@ -12,10 +13,20 @@ interface Stats {
   topCategories: { category: string; count: number }[]
 }
 
+const DEFAULT_PARENT_CONFIG: ParentNotificationConfig = {
+  enabled: false,
+  parentPhone: "",
+  twilioAccountSid: "",
+  twilioAuthToken: "",
+  twilioFromNumber: "",
+}
+
 const Popup = () => {
   const [stats, setStats] = useState<Stats | null>(null)
   const [events, setEvents] = useState<DetectionEvent[]>([])
-  const [tab, setTab] = useState<"dashboard" | "log">("dashboard")
+  const [tab, setTab] = useState<"dashboard" | "log" | "settings">("dashboard")
+  const [parentConfig, setParentConfig] = useState<ParentNotificationConfig>(DEFAULT_PARENT_CONFIG)
+  const [saveStatus, setSaveStatus] = useState<string>("")
 
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "GET_STATS" }, (response) => {
@@ -24,7 +35,30 @@ const Popup = () => {
     chrome.runtime.sendMessage({ type: "GET_EVENTS" }, (response) => {
       if (response?.events) setEvents(response.events)
     })
+    getSettings().then((settings) => {
+      if (settings.parentNotification) {
+        setParentConfig(settings.parentNotification)
+      }
+    })
   }, [])
+
+  const handleSaveParentConfig = async () => {
+    await saveSettings({ parentNotification: parentConfig })
+    setSaveStatus("Saved!")
+    setTimeout(() => setSaveStatus(""), 2000)
+  }
+
+  const handleTestSMS = () => {
+    setSaveStatus("Sending...")
+    chrome.runtime.sendMessage({ type: "TEST_SMS" }, (response) => {
+      if (response?.success) {
+        setSaveStatus("Test SMS sent!")
+      } else {
+        setSaveStatus("Failed: " + (response?.error || "check Twilio config"))
+      }
+      setTimeout(() => setSaveStatus(""), 3000)
+    })
+  }
 
   const getScoreColor = (score: number) => {
     if (score === 0) return HARM_LEVEL_COLORS.safe
@@ -51,6 +85,11 @@ const Popup = () => {
           className={tab === "log" ? "active" : ""}
           onClick={() => setTab("log")}>
           Activity Log
+        </button>
+        <button
+          className={tab === "settings" ? "active" : ""}
+          onClick={() => setTab("settings")}>
+          Settings
         </button>
       </nav>
 
@@ -129,6 +168,84 @@ const Popup = () => {
               </div>
             ))
           )}
+        </div>
+      )}
+      {tab === "settings" && (
+        <div className="settings-container">
+          <h3>Parent SMS Notifications</h3>
+          <p className="settings-desc">
+            Get an SMS alert when your child shares high-risk personal information.
+          </p>
+
+          <label className="setting-toggle">
+            <input
+              type="checkbox"
+              checked={parentConfig.enabled}
+              onChange={(e) =>
+                setParentConfig({ ...parentConfig, enabled: e.target.checked })
+              }
+            />
+            <span>Enable SMS alerts</span>
+          </label>
+
+          {parentConfig.enabled && (
+            <div className="settings-fields">
+              <label className="setting-field">
+                <span>Parent Phone Number</span>
+                <input
+                  type="tel"
+                  placeholder="+1234567890"
+                  value={parentConfig.parentPhone}
+                  onChange={(e) =>
+                    setParentConfig({ ...parentConfig, parentPhone: e.target.value })
+                  }
+                />
+              </label>
+              <label className="setting-field">
+                <span>Twilio Account SID</span>
+                <input
+                  type="text"
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={parentConfig.twilioAccountSid}
+                  onChange={(e) =>
+                    setParentConfig({ ...parentConfig, twilioAccountSid: e.target.value })
+                  }
+                />
+              </label>
+              <label className="setting-field">
+                <span>Twilio Auth Token</span>
+                <input
+                  type="password"
+                  placeholder="Your auth token"
+                  value={parentConfig.twilioAuthToken}
+                  onChange={(e) =>
+                    setParentConfig({ ...parentConfig, twilioAuthToken: e.target.value })
+                  }
+                />
+              </label>
+              <label className="setting-field">
+                <span>Twilio Phone Number (From)</span>
+                <input
+                  type="tel"
+                  placeholder="+1234567890"
+                  value={parentConfig.twilioFromNumber}
+                  onChange={(e) =>
+                    setParentConfig({ ...parentConfig, twilioFromNumber: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          )}
+
+          <button className="save-btn" onClick={handleSaveParentConfig}>
+            Save Settings
+          </button>
+          {parentConfig.enabled && parentConfig.parentPhone && (
+            <button className="test-btn" onClick={handleTestSMS}>
+              Send Test SMS
+            </button>
+          )}
+          {saveStatus && <span className="save-status">{saveStatus}</span>}
         </div>
       )}
     </div>

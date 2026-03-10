@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Privacy Shadow Quick Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .test-box { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        #output { background: white; padding: 15px; margin-top: 15px; border-radius: 5px; min-height: 100px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>👻 Privacy Shadow Extension Test</h1>
+
+    <div class="test-box info">
+        <strong>Instructions:</strong>
+        <ol>
+            <li>Make sure the Privacy Shadow extension is loaded in Chrome</li>
+            <li>Click the buttons below to test different PII types</li>
+            <li>Check the output box for results</li>
+            <li>Click the extension icon (ghost) to see alerts</li>
+        </ol>
+    </div>
+
+    <div id="extensionStatus" class="test-box info">
+        Checking extension status...
+    </div>
+
+    <h2>Test PII Detection</h2>
+    <button onclick="testBirthdate()">Test Birthdate</button>
+    <button onclick="testPhone()">Test Phone</button>
+    <button onclick="testEmail()">Test Email</button>
+    <button onclick="testLocation()">Test Location</button>
+    <button onclick="testCombined()">Test Combined PII</button>
+
+    <h2>Output</h2>
+    <div id="output">Click a test button above...</div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const colors = { info: '#333', success: '#28a745', error: '#dc3545' };
+            output.innerHTML += `<div style="color: ${colors[type]}; margin: 5px 0;">${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function checkExtension() {
+            if (typeof chrome === 'undefined' || !chrome.runtime) {
+                document.getElementById('extensionStatus').className = 'test-box error';
+                document.getElementById('extensionStatus').textContent = '❌ Chrome extension API not available';
+                log('ERROR: Chrome extension API not found. Make sure this is opened in Chrome browser.', 'error');
+                return false;
+            }
+
+            log('✓ Chrome extension API is available', 'success');
+            return true;
+        }
+
+        function sendDetectPII(text) {
+            if (!checkExtension()) return;
+
+            log(`Testing: "${text}"`, 'info');
+
+            chrome.runtime.sendMessage(
+                { type: 'DETECT_PII', text: text },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        log(`ERROR: ${chrome.runtime.lastError.message}`, 'error');
+                        document.getElementById('extensionStatus').className = 'test-box error';
+                        document.getElementById('extensionStatus').textContent = `❌ Extension error: ${chrome.runtime.lastError.message}`;
+                        return;
+                    }
+
+                    if (response && response.detected && response.detected.length > 0) {
+                        log(`✅ DETECTED ${response.detected.length} PII type(s):`, 'success');
+                        response.detected.forEach(pii => {
+                            log(`   • ${pii.description} (${pii.type})`, 'success');
+                        });
+                        log(`   Risk Score: ${response.risk.score}/100 (${response.risk.level})`, 'info');
+
+                        document.getElementById('extensionStatus').className = 'test-box success';
+                        document.getElementById('extensionStatus').textContent = `✅ Extension Working! Detected ${response.detected.length} PII type(s)`;
+                    } else {
+                        log(`⚠️ No PII detected in: "${text}"`, 'info');
+                    }
+                }
+            );
+        }
+
+        function testBirthdate() {
+            sendDetectPII('My birthday is 05/12/2012');
+        }
+
+        function testPhone() {
+            sendDetectPII('Call me at 123-456-7890');
+        }
+
+        function testEmail() {
+            sendDetectPII('Email me at test@example.com');
+        }
+
+        function testLocation() {
+            sendDetectPII('I live in Springfield, IL');
+        }
+
+        function testCombined() {
+            sendDetectPII('My name is John, I am 13 years old, I live in Springfield, IL, and you can call me at 123-456-7890');
+        }
+
+        // Auto-check extension on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (checkExtension()) {
+                    document.getElementById('extensionStatus').className = 'test-box info';
+                    document.getElementById('extensionStatus').textContent = '✓ Extension API available - Click a test button above';
+
+                    // Try a quick test
+                    log('Ready to test! Click a button above.', 'info');
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

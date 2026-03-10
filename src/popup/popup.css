@@ -216,3 +216,117 @@
   color: #64748b;
   font-size: 14px;
 }
+
+.settings-container {
+  padding: 16px;
+}
+
+.settings-container h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.settings-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.setting-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+}
+
+.settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-field span {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.setting-field input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #1e1b3a;
+  color: #e2e8f0;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setting-field input:focus {
+  border-color: #6366f1;
+}
+
+.setting-field input::placeholder {
+  color: #475569;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 10px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-btn:hover {
+  background: #4f46e5;
+}
+
+.test-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: transparent;
+  color: #a5b4fc;
+  border: 1px solid #6366f1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.test-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.save-status {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #22c55e;
+  text-align: center;
+}

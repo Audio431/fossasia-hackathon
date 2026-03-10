@@ -31,12 +31,21 @@ export interface DetectionEvent {
   blocked: boolean
 }
 
+export interface ParentNotificationConfig {
+  enabled: boolean
+  parentPhone: string
+  twilioAccountSid: string
+  twilioAuthToken: string
+  twilioFromNumber: string
+}
+
 export interface UserSettings {
   enabled: boolean
   sensitivity: "low" | "medium" | "high"
   blockedCategories: PIICategory[]
   showWarnings: boolean
   parentPin?: string
+  parentNotification?: ParentNotificationConfig
 }
 
 export const PII_WEIGHTS: Record<PIICategory, number> = {

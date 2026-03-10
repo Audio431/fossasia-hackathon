@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Privacy Shadow Auto Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test-box { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        h1 { color: #333; }
+        #results { background: white; padding: 20px; margin-top: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-result { margin: 15px 0; padding: 10px; border-left: 4px solid #007bff; background: #f8f9fa; }
+        .test-result.pass { border-left-color: #28a745; }
+        .test-result.fail { border-left-color: #dc3545; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>👻 Privacy Shadow Automated Test</h1>
+
+    <div id="status" class="test-box info">
+        <div class="spinner"></div>
+        <p><strong>Running automated tests...</strong></p>
+        <p>This will take about 10 seconds...</p>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const tests = [
+            { name: 'Birthdate Detection', text: 'My birthday is 05/12/2012', expected: 1 },
+            { name: 'Phone Detection', text: 'Call me at 123-456-7890', expected: 1 },
+            { name: 'Email Detection', text: 'Email me at test@example.com', expected: 1 },
+            { name: 'Location Detection', text: 'I live in Springfield, IL', expected: 1 },
+            { name: 'Combined PII', text: 'My name is John, I am 13 years old, I live in Springfield, IL, call me at 123-456-7890', expected: 3 }
+        ];
+
+        let results = [];
+        let currentTest = 0;
+
+        function addResult(test, passed, details, response) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <h3>${passed ? '✅' : '❌'} ${test.name}</h3>
+                <p><strong>Input:</strong> "${test.text}"</p>
+                <p><strong>Expected:</strong> ${test.expected} PII type(s)</p>
+                <p><strong>Got:</strong> ${details}</p>
+                ${response ? `<p><strong>Risk Score:</strong> ${response.risk?.score}/100 (${response.risk?.level})</p>` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function runTest(test) {
+            return new Promise((resolve) => {
+                if (typeof chrome === 'undefined' || !chrome.runtime) {
+                    addResult(test, false, 'Chrome extension API not available', null);
+                    resolve();
+                    return;
+                }
+
+                chrome.runtime.sendMessage(
+                    { type: 'DETECT_PII', text: test.text },
+                    (response) => {
+                        if (chrome.runtime.lastError) {
+                            addResult(test, false, `Extension error: ${chrome.runtime.lastError.message}`, null);
+                            resolve();
+                            return;
+                        }
+
+                        if (response && response.detected) {
+                            const count = response.detected.length;
+                            const passed = count === test.expected;
+                            const details = response.detected.map(p => p.description).join(', ');
+                            addResult(test, passed, `${count} PII type(s) detected: ${details}`, response);
+                        } else {
+                            addResult(test, false, 'No response from extension', null);
+                        }
+                        resolve();
+                    }
+                );
+            });
+        }
+
+        async function runAllTests() {
+            for (const test of tests) {
+                await runTest(test);
+                await new Promise(r => setTimeout(r, 1500)); // Wait between tests
+            }
+
+            // Update status
+            const statusDiv = document.getElementById('status');
+            const passed = results.filter(r => r.passed).length;
+            const total = tests.length;
+
+            if (passed === total) {
+                statusDiv.className = 'test-box success';
+                statusDiv.innerHTML = `<p><strong>✅ All Tests Passed!</strong> (${passed}/${total})</p>`;
+            } else {
+                statusDiv.className = 'test-box error';
+                statusDiv.innerHTML = `<p><strong>⚠️ Some Tests Failed</strong> (${passed}/${total} passed)</p>`;
+            }
+
+            // Add summary
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'test-box';
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <p><strong>Total Tests:</strong> ${total}</p>
+                <p><strong>Passed:</strong> ${passed}</p>
+                <p><strong>Failed:</strong> ${total - passed}</p>
+                <p><strong>Extension Status:</strong> ${passed === total ? '✅ Working' : '❌ Issues detected'}</p>
+                <hr>
+                <p><strong>Next Steps:</strong></p>
+                <ul>
+                    <li>Click the ghost icon (👻) in Chrome toolbar to check alerts</li>
+                    <li>You should see ${passed} alerts in the popup</li>
+                    <li>Go to Instagram to test real-time monitoring</li>
+                </ul>
+            `;
+            resultsDiv.appendChild(summaryDiv);
+        }
+
+        // Start tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

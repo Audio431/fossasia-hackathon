@@ -1,6 +1,9 @@
 import { chromium, type Page } from "playwright"
+import path from "path"
+import readline from "readline"
 
-const CDP_URL = "http://localhost:9222"
+const EXTENSION_PATH = path.resolve(__dirname, "build/chrome-mv3-prod")
+const TEST_URL = "https://www.instagram.com/direct/inbox/"
 
 const TEST_MESSAGES = [
   { text: "my name is john smith", expectDetection: true, expectCategory: "full_name" },
@@ -14,32 +17,36 @@ const TEST_MESSAGES = [
 ]
 
 async function main() {
-  console.log("Connecting to Chrome via CDP...")
-  const browser = await chromium.connectOverCDP(CDP_URL)
-  const contexts = browser.contexts()
-  const context = contexts[0]
-  const pages = context.pages()
+  console.log("Launching Chrome with extension loaded (headed mode)...")
+  console.log(`Extension path: ${EXTENSION_PATH}`)
 
-  // Find the Instagram DM page
-  let igPage: Page | undefined
-  for (const page of pages) {
-    if (page.url().includes("instagram.com/direct")) {
-      igPage = page
-      break
-    }
-  }
+  const context = await chromium.launchPersistentContext("", {
+    headless: false,
+    args: [
+      `--disable-extensions-except=${EXTENSION_PATH}`,
+      `--load-extension=${EXTENSION_PATH}`,
+    ],
+    slowMo: 50,
+  })
 
-  if (!igPage) {
-    console.error("No Instagram DM page found. Pages:", pages.map((p) => p.url()))
-    process.exit(1)
-  }
+  // Navigate to Instagram
+  const igPage = context.pages()[0] || await context.newPage()
+  console.log(`Navigating to ${TEST_URL}...`)
+  await igPage.goto(TEST_URL, { waitUntil: "domcontentloaded", timeout: 30000 })
 
-  console.log(`Found IG DM page: ${igPage.url()}`)
+  // Wait for user to log in and open a DM conversation
+  console.log("\n========================================")
+  console.log("  Please log in to Instagram and open")
+  console.log("  a DM conversation in the browser.")
+  console.log("  Press ENTER here when ready...")
+  console.log("========================================\n")
+  await new Promise<void>((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+    rl.question("", () => { rl.close(); resolve() })
+  })
 
-  // Step 1: Reload the page so content script gets injected
-  console.log("\n=== Step 1: Reloading page for content script injection ===")
-  await igPage.reload({ waitUntil: "networkidle" })
-  await igPage.waitForTimeout(3000) // Wait for SPA hydration + content script init
+  console.log("Continuing... Waiting for content script injection...")
+  await igPage.waitForTimeout(3000) // Wait for content script init
 
   // Step 2: Verify content script is injected
   console.log("\n=== Step 2: Checking content script injection ===")
@@ -196,11 +203,7 @@ async function main() {
     console.log("Debug info:", JSON.stringify(debugInfo, null, 2))
   }
 
-  try {
-    browser.close()
-  } catch {
-    // CDP-connected browsers can't be closed
-  }
+  await context.close()
   console.log("\nDone!")
 }
 
