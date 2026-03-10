@@ -68,8 +68,9 @@ function attachInputMonitor(el: Element): void {
 
       if (detected.length === 0) return;
 
-      // Check settings: quiet hours and sensitivity threshold
+      // Check settings: enabled flag, quiet hours, sensitivity threshold
       const settings = await loadSettings();
+      if (settings.enabled === false) return;
       if (isQuietHours(settings)) return;
 
       const threshold = SENSITIVITY_THRESHOLDS[settings.sensitivity];

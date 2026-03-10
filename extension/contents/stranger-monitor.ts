@@ -7,6 +7,7 @@
  */
 
 import { detectStrangerRisk } from '../detection/stranger-detector';
+import { loadSettings } from '../utils/settings';
 
 // Platforms where this monitor is most relevant
 const CHAT_SELECTORS: string[] = [
@@ -147,21 +148,25 @@ function attachMonitor(el: Element): void {
       // Accumulate into conversation buffer (last ~500 chars)
       conversationBuffer = (conversationBuffer + ' ' + value).slice(-500);
 
-      const risk = detectStrangerRisk(conversationBuffer);
-      if (risk.level === 'warning' || risk.level === 'danger') {
-        showStrangerWarning(risk.flags);
+      loadSettings().then(settings => {
+        if (settings.enabled === false) return;
 
-        chrome.runtime.sendMessage({
-          type: 'STRANGER_RISK_DETECTED',
-          data: {
-            score: risk.score,
-            level: risk.level,
-            flags: risk.flags,
-            categories: risk.categories,
-            url: window.location.href,
-          },
-        }).catch(() => {});
-      }
+        const risk = detectStrangerRisk(conversationBuffer);
+        if (risk.level === 'warning' || risk.level === 'danger') {
+          showStrangerWarning(risk.flags);
+
+          chrome.runtime.sendMessage({
+            type: 'STRANGER_RISK_DETECTED',
+            data: {
+              score: risk.score,
+              level: risk.level,
+              flags: risk.flags,
+              categories: risk.categories,
+              url: window.location.href,
+            },
+          }).catch(() => {});
+        }
+      });
     }, 800);
   });
 

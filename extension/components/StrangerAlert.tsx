@@ -49,6 +49,10 @@ export const StrangerAlert: React.FC<StrangerAlertProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
+    // Also call onContinue to acknowledge the risk when closing
+    if (onContinue) {
+      onContinue();
+    }
   };
 
   const toggleSection = (section: string) => {

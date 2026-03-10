@@ -41,10 +41,14 @@ class InstagramStrangerMonitor {
   private detector: typeof strangerModel;
   private conversationHistory: Map<string, InstagramMessage[]> = new Map();
   private analyzedThreads: Set<string> = new Set();
+  private acknowledgedThreads: Set<string> = new Set();
   private alertContainer: HTMLDivElement | null = null;
+  private currentThreadId: string | null = null;
 
   constructor() {
     this.detector = strangerModel;
+    // Load acknowledged threads from localStorage
+    this.loadAcknowledgedThreads();
   }
 
   /**
@@ -68,6 +72,50 @@ class InstagramStrangerMonitor {
     this.monitorComments();
 
     console.log('Privacy Shadow: Instagram stranger monitor ready');
+  }
+
+  /**
+   * Load acknowledged threads from localStorage
+   */
+  private loadAcknowledgedThreads(): void {
+    try {
+      const stored = localStorage.getItem('privacy-shadow-acknowledged-threads');
+      if (stored) {
+        const threads = JSON.parse(stored) as string[];
+        this.acknowledgedThreads = new Set(threads);
+        console.log('Privacy Shadow: Loaded acknowledged threads', threads.length);
+      }
+    } catch (error) {
+      console.error('Privacy Shadow: Error loading acknowledged threads', error);
+    }
+  }
+
+  /**
+   * Save acknowledged threads to localStorage
+   */
+  private saveAcknowledgedThreads(): void {
+    try {
+      const threads = Array.from(this.acknowledgedThreads);
+      localStorage.setItem('privacy-shadow-acknowledged-threads', JSON.stringify(threads));
+    } catch (error) {
+      console.error('Privacy Shadow: Error saving acknowledged threads', error);
+    }
+  }
+
+  /**
+   * Mark thread as acknowledged (user clicked "I Know This Person")
+   */
+  private markThreadAsAcknowledged(threadId: string): void {
+    this.acknowledgedThreads.add(threadId);
+    this.saveAcknowledgedThreads();
+    console.log('Privacy Shadow: Thread marked as acknowledged', threadId);
+  }
+
+  /**
+   * Check if thread has been acknowledged
+   */
+  private isThreadAcknowledged(threadId: string): boolean {
+    return this.acknowledgedThreads.has(threadId);
   }
 
   /**
@@ -138,8 +186,18 @@ class InstagramStrangerMonitor {
 
       const threadId = threadIdMatch[1];
 
-      // Don't re-analyze the same thread
+      // Store current thread ID
+      this.currentThreadId = threadId;
+
+      // Don't re-analyze the same thread (unless it's a new message)
       if (this.analyzedThreads.has(threadId)) return;
+
+      // Don't show alert if user already acknowledged the risk
+      if (this.isThreadAcknowledged(threadId)) {
+        console.log('Privacy Shadow: Thread already acknowledged by user', threadId);
+        this.analyzedThreads.add(threadId);
+        return;
+      }
 
       // Extract profile and messages from Instagram DOM
       const profile = await this.extractInstagramProfile();
@@ -468,6 +526,9 @@ class InstagramStrangerMonitor {
       dayOfWeek: new Date().getDay(),
     };
 
+    // Get current thread ID
+    const threadId = this.currentThreadId;
+
     // Render alert
     render(
       <StrangerAlert
@@ -475,10 +536,16 @@ class InstagramStrangerMonitor {
         features={features}
         onBlock={() => {
           console.log('Privacy Shadow: User clicked block');
+          if (threadId) {
+            this.markThreadAsAcknowledged(threadId);
+          }
           this.alertContainer?.remove();
         }}
         onContinue={() => {
-          console.log('Privacy Shadow: User clicked continue');
+          console.log('Privacy Shadow: User clicked continue (I Know This Person)');
+          if (threadId) {
+            this.markThreadAsAcknowledged(threadId);
+          }
           this.alertContainer?.remove();
         }}
         onLearnMore={() => {
@@ -528,8 +595,14 @@ class InstagramStrangerMonitor {
             // Check if it's a new message
             if (element.classList.contains('x9f619') ||
                 element.querySelector('.x9f619') !== null) {
-              // Re-analyze current thread when new message arrives
-              this.analyzeCurrentDMThread();
+              // Get current thread ID and remove from analyzed threads to allow re-analysis
+              const threadIdMatch = window.location.pathname.match(/\/direct\/t\/([^\/]+)/);
+              if (threadIdMatch) {
+                const threadId = threadIdMatch[1];
+                this.analyzedThreads.delete(threadId);
+                console.log('Privacy Shadow: New message detected, re-analyzing thread', threadId);
+                this.analyzeCurrentDMThread();
+              }
             }
           }
         });
