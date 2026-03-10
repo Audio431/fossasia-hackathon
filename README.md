@@ -26,7 +26,7 @@ npm run build
 2. Enable **Developer mode**
 3. Click **Load unpacked** → select `build/chrome-mv3-dev`
 
-**Try the Demo**: Open `test.html` in your browser or `demos/showcase.html` for the full feature showcase.
+**Try the Demo**: Open `demos/index.html` or `demos/showcase.html` in your browser.
 
 📖 See [Quick Start Guide](./docs/QUICKSTART.md) for a detailed walkthrough.
 
