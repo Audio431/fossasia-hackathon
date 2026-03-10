@@ -33,20 +33,22 @@ const PII_RULES: PatternRule[] = [
       /\b\d{5}(?:-\d{4})?\b/g,
       // Apartment/unit references
       /\b(?:apt|apartment|suite|unit|#)\s*\d+\w?\b/gi,
-      // "my address is..." or "I live at..."
-      /\b(?:my\s+address\s+is|i\s+live\s+at|i\s+live\s+on|i\s+live\s+in|my\s+house\s+is)\s+(.{5,60})/gi,
+      // "my address is..." or "I live at..." - limit capture length
+      /\b(?:my\s+address\s+is|i\s+live\s+at|i\s+live\s+on|i\s+live\s+in|my\s+house\s+is)\s+([\w]+(?:\s+[\w]+){1,6})(?=\s+and\b|\s+i\b|\s*[.,!?]|\s*$)/gi,
     ],
     confidence: 0.85,
   },
   {
     category: "full_name",
     patterns: [
-      // "my name is X Y" - most reliable pattern
-      /\bmy\s+(?:full\s+)?name\s+is\s+(\w+(?:\s+\w+)+)/gi,
+      // "my name is X Y" - limit to 2-4 words to avoid eating the rest of the sentence
+      /\bmy\s+(?:full\s+)?name\s+is\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){1,3})(?=\s+and\b|\s+i\b|\s*[.,!?]|\s*$)/gi,
+      // Fallback: "my name is X Y" without lookahead but capped at 2-3 words
+      /\bmy\s+(?:full\s+)?name\s+is\s+([a-zA-Z]{2,}(?:\s+[a-zA-Z]{2,}){1,2})\b/gi,
       // "call me X Y"
-      /\b(?:call\s+me|they\s+call\s+me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
+      /\b(?:call\s+me|they\s+call\s+me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b/gi,
       // "i'm X Y" but NOT followed by prepositions/common words
-      /\bi'?m\s+(?!at\b|in\b|on\b|from\b|near\b|here\b|there\b|the\b|a\b|not\b|so\b|very\b|just\b|going\b|doing\b|looking\b|trying\b|coming\b|getting\b|feeling\b|really\b|also\b|ok\b|okay\b|good\b|fine\b|bad\b|happy\b|sad\b|sure\b|like\b|about\b)([a-zA-Z]{2,}(?:\s+[a-zA-Z]{2,})+)\b/gi,
+      /\bi'?m\s+(?!at\b|in\b|on\b|from\b|near\b|here\b|there\b|the\b|a\b|not\b|so\b|very\b|just\b|going\b|doing\b|looking\b|trying\b|coming\b|getting\b|feeling\b|really\b|also\b|ok\b|okay\b|good\b|fine\b|bad\b|happy\b|sad\b|sure\b|like\b|about\b)([a-zA-Z]{2,}(?:\s+[a-zA-Z]{2,}){1,2})\b/gi,
     ],
     confidence: 0.7,
   },
@@ -56,7 +58,7 @@ const PII_RULES: PatternRule[] = [
       // "I go to X school", "I attend X"
       /\b(?:i\s+(?:go\s+to|attend|study\s+at|am\s+at|am\s+from))\s+([\w\s]+(?:school|academy|college|university|high|middle|elementary|prep|institute))\b/gi,
       // "my school is X"
-      /\bmy\s+school\s+(?:is|name\s+is)\s+([\w\s]+)/gi,
+      /\bmy\s+school\s+(?:is|name\s+is)\s+([\w]+(?:\s+[\w]+){0,4})\b/gi,
       // Just mentioning school names with common suffixes
       /\b[\w\s]{2,25}(?:elementary|middle|high)\s+school\b/gi,
       /\b[\w\s]{2,25}(?:academy|preparatory|prep school)\b/gi,
@@ -84,16 +86,17 @@ const PII_RULES: PatternRule[] = [
   {
     category: "location",
     patterns: [
-      // "I'm at/in/near/from X"
-      /\bi'?\s*a?m\s+(?:at|in|near|from|located\s+in)\s+([\w\s,]+)/gi,
+      // "I'm at/in/near/from X" - limit capture to avoid eating rest of sentence
+      /\bi'?\s*a?m\s+(?:at|in|near|from|located\s+in)\s+([\w]+(?:\s+[\w]+){0,4})(?=\s+and\b|\s+i\b|\s*[.,!?]|\s*$)/gi,
+      /\bi'?\s*a?m\s+(?:at|in|near|from|located\s+in)\s+([\w]+(?:\s+[\w]+){0,3})\b/gi,
       // "my location/address is X"
-      /\bmy\s+(?:location|city|town|area|neighborhood)\s+is\s+([\w\s,]+)/gi,
+      /\bmy\s+(?:location|city|town|area|neighborhood)\s+is\s+([\w]+(?:\s+[\w]+){0,3})\b/gi,
       // "I live in/at/on/near X"
-      /\b(?:i\s+)?live\s+(?:at|in|on|near)\s+([\w\s,]+)/gi,
+      /\b(?:i\s+)?live\s+(?:at|in|on|near)\s+([\w]+(?:\s+[\w]+){0,4})(?=\s+and\b|\s+i\b|\s*[.,!?]|\s*$)/gi,
       // GPS coordinates
       /-?\d{1,3}\.\d{4,},\s*-?\d{1,3}\.\d{4,}/g,
       // "come to X", "meet me at X"
-      /\b(?:come\s+to|meet\s+(?:me\s+)?at|pick\s+me\s+up\s+at)\s+([\w\s,]+)/gi,
+      /\b(?:come\s+to|meet\s+(?:me\s+)?at|pick\s+me\s+up\s+at)\s+([\w]+(?:\s+[\w]+){0,4})\b/gi,
     ],
     confidence: 0.7,
   },

@@ -18,6 +18,7 @@ export interface HarmScore {
   total: number // 0-100
   breakdown: Record<PIICategory, number>
   level: "safe" | "low" | "medium" | "high" | "critical"
+  strangerMultiplier?: number
 }
 
 export interface DetectionEvent {

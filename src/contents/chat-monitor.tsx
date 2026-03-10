@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react"
 import { calculateHarmScore } from "../lib/harm-scorer"
 import { detectPII } from "../lib/pii-detector"
 import { detectPlatform } from "../lib/social-media-selectors"
+import { assessStrangerRisk, incrementConversation, getRecipientId, type StrangerRiskProfile } from "../lib/stranger-detector"
 import type { DetectionEvent, HarmScore, PIIDetection } from "../lib/types"
 
 export const config: PlasmoCSConfig = {
@@ -30,6 +31,7 @@ interface WarningState {
   detections: PIIDetection[]
   harmScore: HarmScore | null
   inputElement: HTMLElement | null
+  strangerRisk: StrangerRiskProfile | null
 }
 
 const ChatMonitor = () => {
@@ -38,6 +40,7 @@ const ChatMonitor = () => {
     detections: [],
     harmScore: null,
     inputElement: null,
+    strangerRisk: null,
   })
 
   useEffect(() => {
@@ -46,7 +49,20 @@ const ChatMonitor = () => {
 
     let debounceTimer: ReturnType<typeof setTimeout>
 
-    const checkInput = (element: HTMLElement) => {
+    // Cache stranger risk so we don't re-scrape on every keystroke
+    let cachedStrangerRisk: StrangerRiskProfile | null = null
+    let strangerRiskExpiry = 0
+
+    const getStrangerRisk = async (): Promise<StrangerRiskProfile> => {
+      if (cachedStrangerRisk && Date.now() < strangerRiskExpiry) {
+        return cachedStrangerRisk
+      }
+      cachedStrangerRisk = await assessStrangerRisk(platform.name)
+      strangerRiskExpiry = Date.now() + 30000 // cache for 30s
+      return cachedStrangerRisk
+    }
+
+    const checkInput = async (element: HTMLElement) => {
       const text =
         element.textContent || (element as HTMLTextAreaElement).value || ""
       if (text.length < 3) {
@@ -56,12 +72,18 @@ const ChatMonitor = () => {
 
       const detections = detectPII(text)
       if (detections.length > 0) {
-        const harmScore = calculateHarmScore(detections)
+        const strangerRisk = await getStrangerRisk()
+        const harmScore = calculateHarmScore(detections, strangerRisk.multiplier)
+
+        // Track conversation activity
+        await incrementConversation(getRecipientId(), platform.name)
+
         setWarning({
           visible: true,
           detections,
           harmScore,
           inputElement: element,
+          strangerRisk,
         })
 
         // Send event to background
@@ -197,7 +219,8 @@ const ChatMonitor = () => {
 
   if (!warning.visible || !warning.harmScore) return null
 
-  const { harmScore, detections } = warning
+  const { harmScore, detections, strangerRisk } = warning
+  const isStranger = strangerRisk && strangerRisk.multiplier > 1.2
 
   return (
     <div className="safechild-warning-overlay" data-level={harmScore.level}>
@@ -212,6 +235,16 @@ const ChatMonitor = () => {
         </span>
         <span className="safechild-score">Risk: {harmScore.total}/100</span>
       </div>
+      {isStranger && (
+        <div className="safechild-stranger-badge">
+          Stranger Alert — this person may not be someone you know
+          <ul className="safechild-stranger-signals">
+            {strangerRisk.signals.filter((s) => s.risky).map((s, i) => (
+              <li key={i}>{s.detail}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="safechild-warning-body">
         <p>You are about to share sensitive information:</p>
         <ul>

@@ -1,7 +1,7 @@
 import type { HarmScore, PIIDetection } from "./types"
 import { PII_WEIGHTS } from "./types"
 
-export function calculateHarmScore(detections: PIIDetection[]): HarmScore {
+export function calculateHarmScore(detections: PIIDetection[], strangerMultiplier: number = 1.0): HarmScore {
   const breakdown: Record<string, number> = {
     full_name: 0,
     address: 0,
@@ -31,12 +31,14 @@ export function calculateHarmScore(detections: PIIDetection[]): HarmScore {
     (v) => v > 0
   ).length
   const combinationBonus = categoriesDetected > 1 ? categoriesDetected * 5 : 0
-  const finalTotal = Math.min(100, total + combinationBonus)
+  // Apply stranger multiplier: 1.0 (trusted) to 2.0 (stranger)
+  const finalTotal = Math.min(100, (total + combinationBonus) * strangerMultiplier)
 
   return {
     total: Math.round(finalTotal),
     breakdown: breakdown as HarmScore["breakdown"],
     level: getHarmLevel(finalTotal),
+    strangerMultiplier,
   }
 }
 
