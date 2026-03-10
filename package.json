@@ -1,0 +1,63 @@
+{
+  "name": "privacy-shadow-extension",
+  "displayName": "Privacy Shadow: Protect Kids Online",
+  "version": "1.0.0",
+  "description": "Real-time protection for young users sharing sensitive information online",
+  "private": true,
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package",
+    "dev:chrome": "plasmo dev --chrome",
+    "dev:edge": "plasmo dev --edge",
+    "build:chrome": "plasmo build --chrome",
+    "build:edge": "plasmo build --edge",
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@plasmohq/storage": "^1.14.0",
+    "@tensorflow/tfjs": "^4.20.0",
+    "clsx": "^2.1.0",
+    "exif-js": "^2.3.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.344.0",
+    "plasmo": "^0.90.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/chrome": "^0.0.268",
+    "@types/exif-js": "^2.3.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "jest": "^30.3.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.3.3"
+  },
+  "manifest": {
+    "host_permissions": [
+      "https://*/*",
+      "http://*/*"
+    ],
+    "permissions": [
+      "storage",
+      "tabs",
+      "activeTab",
+      "webNavigation",
+      "notifications"
+    ]
+  }
+}

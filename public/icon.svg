@@ -1,0 +1,14 @@
+<svg width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#4F46E5"/>
+
+  <!-- Ghost shape -->
+  <path d="M44 40 C44 28.9543 52.9543 20 64 20 C75.0457 20 84 28.9543 84 40 L84 90 C84 95.5228 79.5228 100 74 100 C68.4772 100 64 95.5228 64 90 C64 95.5228 59.5228 100 54 100 C48.4772 100 44 95.5228 44 90 Z" fill="white"/>
+
+  <!-- Eyes -->
+  <circle cx="56" cy="50" r="4" fill="#4F46E5"/>
+  <circle cx="72" cy="50" r="4" fill="#4F46E5"/>
+
+  <!-- Friendly smile -->
+  <path d="M56 65 Q64 72 72 65" stroke="#4F46E5" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

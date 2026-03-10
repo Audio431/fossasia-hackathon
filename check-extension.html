@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Status Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        ol { line-height: 1.8; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Extension Status Check</h1>
+
+    <div id="status" class="status info">Checking...</div>
+
+    <div id="instructions"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const instructionsDiv = document.getElementById('instructions');
+
+        // Check if we're in Chrome
+        if (!navigator.userAgent.includes('Chrome')) {
+            statusDiv.className = 'status error';
+            statusDiv.textContent = '❌ Not running in Chrome browser';
+            instructionsDiv.innerHTML = '<p>Please open this file in Google Chrome browser.</p>';
+        }
+        // Check if chrome object exists
+        else if (typeof chrome === 'undefined') {
+            statusDiv.className = 'status error';
+            statusDiv.textContent = '❌ Chrome object not available';
+            instructionsDiv.innerHTML = `
+                <h3>Problem:</h3>
+                <p>The extension API is not available because no extension is loaded.</p>
+
+                <h3>Solution:</h3>
+                <ol>
+                    <li>Open a new tab and go to: <strong>chrome://extensions/</strong></li>
+                    <li>Toggle ON "Developer mode" (top right corner)</li>
+                    <li>Click "Load unpacked" button</li>
+                    <li>Navigate to: <strong>/Users/nat/privacy-shadow/build/chrome-mv3-dev</strong></li>
+                    <li>Click "Select Folder"</li>
+                    <li>Look for "Privacy Shadow: Protect Kids Online" in the list</li>
+                    <li>Make sure it's enabled (blue toggle)</li>
+                    <li>Come back to this page and refresh (Cmd+R)</li>
+                </ol>
+            `;
+        }
+        // Check if chrome.runtime exists
+        else if (typeof chrome.runtime === 'undefined') {
+            statusDiv.className = 'status error';
+            statusDiv.textContent = '❌ Chrome extension API not available';
+            instructionsDiv.innerHTML = '<p>Extension is not loaded. Follow the instructions above.</p>';
+        }
+        // Extension API is available
+        else {
+            statusDiv.className = 'status success';
+            statusDiv.textContent = '✅ Chrome extension API is available!';
+
+            // Try to send a test message
+            chrome.runtime.sendMessage(
+                { type: 'GET_ALERTS' },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        statusDiv.className = 'status error';
+                        statusDiv.textContent = '❌ Extension not responding: ' + chrome.runtime.lastError.message;
+                        instructionsDiv.innerHTML = `
+                            <h3>Error:</h3>
+                            <p>The extension API is available but the extension is not responding.</p>
+
+                            <h3>Possible Causes:</h3>
+                            <ul>
+                                <li><strong>Extension not loaded:</strong> The Privacy Shadow extension needs to be loaded in chrome://extensions/</li>
+                                <li><strong>Background script error:</strong> Check chrome://extensions/ for any error messages</li>
+                                <li><strong>Extension disabled:</strong> Make sure the extension toggle is blue (enabled)</li>
+                            </ul>
+
+                            <h3>How to Check:</h3>
+                            <ol>
+                                <li>Go to: <strong>chrome://extensions/</strong></li>
+                                <li>Find "Privacy Shadow: Protect Kids Online"</li>
+                                <li>Check if there are any red error messages</li>
+                                <li>If not listed, click "Load unpacked" and select the build folder</li>
+                                <li>If there are errors, try removing and reloading the extension</li>
+                            </ol>
+                        `;
+                    } else {
+                        statusDiv.className = 'status success';
+                        statusDiv.textContent = '✅ Extension is Working!';
+                        instructionsDiv.innerHTML = `
+                            <h3>Success!</h3>
+                            <p>The Privacy Shadow extension is loaded and responding correctly.</p>
+
+                            <h3>Test PII Detection:</h3>
+                            <button onclick="testPII()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+                                🧪 Run PII Detection Test
+                            </button>
+
+                            <div id="testResult" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;"></div>
+                        `;
+                    }
+                }
+            );
+
+            // Test function
+            window.testPII = function() {
+                const resultDiv = document.getElementById('testResult');
+                resultDiv.innerHTML = '<p>Testing...</p>';
+
+                chrome.runtime.sendMessage(
+                    { type: 'DETECT_PII', text: 'My birthday is 05/12/2012' },
+                    (response) => {
+                        if (chrome.runtime.lastError) {
+                            resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${chrome.runtime.lastError.message}</p>`;
+                        } else if (response && response.detected && response.detected.length > 0) {
+                            resultDiv.innerHTML = `
+                                <p style="color: green;">✅ Success! Detected ${response.detected.length} PII type(s)</p>
+                                <p><strong>Detected:</strong> ${response.detected.map(p => p.description).join(', ')}</p>
+                                <p><strong>Risk Score:</strong> ${response.risk.score}/100 (${response.risk.level})</p>
+                            `;
+                        } else {
+                            resultDiv.innerHTML = '<p style="color: orange;">⚠️ No PII detected</p>';
+                        }
+                    }
+                );
+            };
+        }
+    </script>
+</body>
+</html>
