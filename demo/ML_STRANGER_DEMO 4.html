@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Shadow - ML Stranger Detection Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide-react@0.344.0/dist/umd/lucide-react.min.js"></script>
+    <style>
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+        @keyframes slide-in {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in { animation: slide-in 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="react,typescript">
+        const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = Motion;
+
+        // Demo Scenarios
+        const demoScenarios = [
+            {
+                id: 'safe-conversation',
+                title: 'Safe Conversation',
+                description: 'Chatting with a known friend from school',
+                riskLevel: 'low',
+                icon: '🛡️'
+            },
+            {
+                id: 'stranger-danger',
+                title: 'Stranger Danger',
+                description: 'New follower asks for personal info',
+                riskLevel: 'high',
+                icon: '⚠️'
+            },
+            {
+                id: 'grooming-pattern',
+                title: 'Grooming Pattern',
+                description: 'Escalating inappropriate requests',
+                riskLevel: 'critical',
+                icon: '🚨'
+            },
+            {
+                id: 'group-chat',
+                title: 'Group Chat',
+                description: 'Unknown person in group chat',
+                riskLevel: 'medium',
+                icon: '👥'
+            }
+        ];
+
+        // StrangerAlert Component
+        const StrangerAlert = ({ prediction, features, onClose, onBlock, onContinue }) => {
+            const riskLevel = prediction.probability > 0.7 ? 'critical' :
+                             prediction.probability > 0.4 ? 'high' :
+                             prediction.probability > 0.2 ? 'medium' : 'low';
+
+            const riskColors = {
+                critical: 'from-red-500 to-red-600',
+                high: 'from-orange-500 to-orange-600',
+                medium: 'from-yellow-500 to-yellow-600',
+                low: 'from-green-500 to-green-600',
+            };
+
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="fixed top-4 right-4 z-50 max-w-md w-full"
+                >
+                    <div className={`bg-gradient-to-br ${riskColors[riskLevel]} rounded-2xl shadow-2xl p-6 text-white`}>
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 p-3 rounded-full">
+                                    <span className="text-2xl">{riskLevel === 'critical' ? '🚨' : riskLevel === 'high' ? '⚠️' : riskLevel === 'medium' ? '🔶' : '✅'}</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-xl">Stranger Alert</h3>
+                                    <p className="text-sm opacity-90 capitalize">{riskLevel} Risk Detected</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="text-white/80 hover:text-white text-2xl">×</button>
+                        </div>
+
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium">Stranger Probability</span>
+                                <span className="text-sm font-bold">{(prediction.probability * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="bg-white/20 rounded-full h-4 overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${prediction.probability * 100}%` }}
+                                    transition={{ duration: 1, ease: 'easeOut' }}
+                                    className="h-full bg-white rounded-full"
+                                />
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs opacity-80">
+                                <span>Confidence: {prediction.confidence.toUpperCase()}</span>
+                                <span>{(prediction.confidenceScore * 100).toFixed(0)}% score</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white/10 rounded-xl p-4 mb-4">
+                            <p className="text-sm font-medium leading-relaxed">{prediction.recommendation}</p>
+                        </div>
+
+                        <div className="mb-4">
+                            <h4 className="font-medium mb-2 flex items-center gap-2">
+                                <span>📊</span> Top Risk Factors
+                            </h4>
+                            <div className="space-y-2">
+                                {prediction.factors.slice(0, 4).map((factor, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ x: -20, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="bg-white/10 rounded-lg p-3 text-sm"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{factor.factor}</p>
+                                                <p className="text-xs opacity-80">{factor.description}</p>
+                                            </div>
+                                            <span className="ml-2 bg-white/20 px-2 py-1 rounded text-xs font-bold">
+                                                {factor.impact}%
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={onBlock}
+                                className="flex-1 bg-white text-red-600 font-bold py-3 px-4 rounded-xl hover:bg-white/90 transition-all hover:scale-105"
+                            >
+                                🚫 Block & Report
+                            </button>
+                            <button
+                                onClick={onContinue}
+                                className="flex-1 bg-white/20 font-bold py-3 px-4 rounded-xl hover:bg-white/30 transition-all hover:scale-105"
+                            >
+                                ✓ I Know Them
+                            </button>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-white/20">
+                            <p className="text-xs opacity-80 flex items-center gap-2">
+                                <span>👁️</span>
+                                ML Detection • {features.platformType} • {new Date().toLocaleTimeString()}
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // Conversation Simulator Component
+        const ConversationSimulator = ({ scenario, onStart, onMessage }) => {
+            const [messages, setMessages] = useState([]);
+            const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+            const [isTyping, setIsTyping] = useState(false);
+
+            const scenarioMessages = {
+                'safe-conversation': [
+                    { sender: 'friend', text: 'Hey! Are you coming to the game tonight?', delay: 1000 },
+                    { sender: 'user', text: 'Yeah! I\'ll be there at 7pm', delay: 2000 },
+                    { sender: 'friend', text: 'Great! See you there 🏀', delay: 1500 },
+                ],
+                'stranger-danger': [
+                    { sender: 'stranger', text: 'Hey! I saw your profile, you seem cool', delay: 1000 },
+                    { sender: 'user', text: 'Uh, do I know you?', delay: 2000 },
+                    { sender: 'stranger', text: 'No, but I\'d love to get to know you. Where do you live?', delay: 1500 },
+                    { sender: 'stranger', text: 'I can come visit you 😊', delay: 2000 },
+                ],
+                'grooming-pattern': [
+                    { sender: 'stranger', text: 'You\'re really mature for your age', delay: 1000 },
+                    { sender: 'user', text: 'Thanks? Who is this?', delay: 2000 },
+                    { sender: 'stranger', text: 'I\'m someone who understands you. Unlike your parents', delay: 1500 },
+                    { sender: 'stranger', text: 'Can you send me a photo? Don\'t tell anyone, this is our secret', delay: 2000 },
+                ],
+                'group-chat': [
+                    { sender: 'unknown', text: 'Added to group "Cool Kids Chat"', delay: 1000 },
+                    { sender: 'friend1', text: 'Hey everyone!', delay: 1500 },
+                    { sender: 'unknown', text: 'Hey! What school do you all go to?', delay: 2000 },
+                    { sender: 'friend2', text: 'We go to Lincoln High', delay: 1500 },
+                ],
+            };
+
+            const simulateConversation = async () => {
+                const msgs = scenarioMessages[scenario] || [];
+                for (let i = 0; i < msgs.length; i++) {
+                    setIsTyping(true);
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    setIsTyping(false);
+                    setMessages(prev => [...prev, { ...msgs[i], id: i }]);
+                    setCurrentMessageIndex(i + 1);
+                    onMessage(msgs[i], i);
+                    await new Promise(resolve => setTimeout(resolve, msgs[i].delay));
+                }
+            };
+
+            useEffect(() => {
+                if (scenario && messages.length === 0) {
+                    simulateConversation();
+                }
+            }, [scenario]);
+
+            return (
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                <span className="text-2xl">💬</span>
+                            </div>
+                            <div className="text-white">
+                                <h3 className="font-bold">Instagram DM</h3>
+                                <p className="text-sm opacity-90">Live conversation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+                        {isTyping && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex justify-start"
+                            >
+                                <div className="bg-gray-100 rounded-2xl rounded-tl-none px-4 py-2 max-w-xs">
+                                    <div className="flex gap-1">
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {messages.map((msg, index) => (
+                            <motion.div
+                                key={msg.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div className={`${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-100 rounded-tl-none'} rounded-2xl px-4 py-2 max-w-xs`}>
+                                    <p className="text-sm">{msg.text}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="border-t border-gray-200 p-4 bg-gray-50">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span>📊</span>
+                            <span>Messages: {currentMessageIndex}</span>
+                            <span className="mx-2">•</span>
+                            <span>Live monitoring active</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Feature Visualization Component
+        const FeatureVisualization = ({ features }) => {
+            const featureCategories = [
+                {
+                    title: 'Account Signals',
+                    icon: '👤',
+                    features: [
+                        { name: 'Account Age', value: `${features.accountAgeDays} days`, risk: features.accountAgeDays < 30 },
+                        { name: 'Follower Ratio', value: features.followerRatio.toFixed(2), risk: features.followerRatio < 0.1 },
+                        { name: 'Verified', value: features.verificationStatus ? 'Yes' : 'No', risk: !features.verificationStatus },
+                    ]
+                },
+                {
+                    title: 'Content Analysis',
+                    icon: '🔍',
+                    features: [
+                        { name: 'Personal Info Requests', value: features.personalInfoRequests, risk: features.personalInfoRequests > 0 },
+                        { name: 'Pressure Tactics', value: features.pressureTactics, risk: features.pressureTactics > 0 },
+                        { name: 'Grooming Language', value: features.groomingLanguage, risk: features.groomingLanguage > 0 },
+                    ]
+                },
+                {
+                    title: 'Social Graph',
+                    icon: '🔗',
+                    features: [
+                        { name: 'Mutual Friends', value: features.mutualFriends, risk: features.mutualFriends === 0 },
+                        { name: 'Previous Interactions', value: features.previousInteractions, risk: features.previousInteractions < 5 },
+                        { name: 'Conversation Depth', value: features.conversationDepth, risk: false },
+                    ]
+                }
+            ];
+
+            return (
+                <div className="space-y-4">
+                    {featureCategories.map((category, catIndex) => (
+                        <motion.div
+                            key={catIndex}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: catIndex * 0.2 }}
+                            className="bg-white rounded-xl shadow-lg p-6"
+                        >
+                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                <span className="text-2xl">{category.icon}</span>
+                                {category.title}
+                            </h3>
+                            <div className="space-y-3">
+                                {category.features.map((feature, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-3 h-3 rounded-full ${feature.risk ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+                                            <span className="text-sm font-medium">{feature.name}</span>
+                                        </div>
+                                        <span className={`text-sm font-bold ${feature.risk ? 'text-red-600' : 'text-gray-600'}`}>
+                                            {feature.value}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            );
+        };
+
+        // Main Demo Component
+        const App = () => {
+            const [currentScenario, setCurrentScenario] = useState(null);
+            const [showAlert, setShowAlert] = useState(false);
+            const [prediction, setPrediction] = useState(null);
+            const [features, setFeatures] = useState(null);
+            const [activeTab, setActiveTab] = useState('intro');
+            const [showFeatures, setShowFeatures] = useState(false);
+
+            const scenarios = {
+                'safe-conversation': {
+                    prediction: {
+                        probability: 0.08,
+                        confidence: 'high',
+                        confidenceScore: 0.95,
+                        factors: [
+                            { factor: 'Known contact', impact: 95, description: 'Multiple previous interactions' },
+                            { factor: 'Safe conversation', impact: 90, description: 'Appropriate language only' },
+                        ],
+                        recommendation: '✅ This person appears to be someone you know. Continue with normal caution.'
+                    },
+                    features: {
+                        accountAgeDays: 365,
+                        followerRatio: 1.2,
+                        verificationStatus: true,
+                        profileCompleteness: 0.9,
+                        hasProfilePhoto: true,
+                        bioLength: 150,
+                        accountType: 'personal',
+                        activityScore: 2.5,
+                        mutualFriends: 15,
+                        mutualFriendsRatio: 0.6,
+                        previousInteractions: 45,
+                        interactionFrequency: 3.2,
+                        responseTime: 180,
+                        conversationDepth: 3,
+                        suspiciousLinks: 0,
+                        personalInfoRequests: 0,
+                        pressureTactics: 0,
+                        inappropriateLanguage: 0,
+                        groomingLanguage: 0,
+                        secrecyRequests: 0,
+                        giftOffers: 0,
+                        transitionSpeed: 0,
+                        isPublicPost: false,
+                        isDirectMessage: true,
+                        isGroupChat: false,
+                        platformType: 'instagram',
+                        timeOfDay: 15,
+                        dayOfWeek: 2,
+                    }
+                },
+                'stranger-danger': {
+                    prediction: {
+                        probability: 0.78,
+                        confidence: 'high',
+                        confidenceScore: 0.92,
+                        factors: [
+                            { factor: 'No mutual friends', impact: 25, description: '0 mutual connections' },
+                            { factor: 'Personal info requests', impact: 40, description: 'Asking for location' },
+                            { factor: 'New conversation', impact: 20, description: 'First interaction' },
+                            { factor: 'Suspicious intent', impact: 35, description: 'Wants to visit' },
+                        ],
+                        recommendation: '⚠️ This might be someone you don\'t know well. Be cautious about sharing personal information.'
+                    },
+                    features: {
+                        accountAgeDays: 5,
+                        followerRatio: 0.05,
+                        verificationStatus: false,
+                        profileCompleteness: 0.3,
+                        hasProfilePhoto: false,
+                        bioLength: 0,
+                        accountType: 'personal',
+                        activityScore: 0.5,
+                        mutualFriends: 0,
+                        mutualFriendsRatio: 0,
+                        previousInteractions: 0,
+                        interactionFrequency: 0,
+                        responseTime: 0,
+                        conversationDepth: 4,
+                        suspiciousLinks: 0,
+                        personalInfoRequests: 1,
+                        pressureTactics: 0,
+                        inappropriateLanguage: 0,
+                        groomingLanguage: 0,
+                        secrecyRequests: 0,
+                        giftOffers: 0,
+                        transitionSpeed: 0.3,
+                        isPublicPost: false,
+                        isDirectMessage: true,
+                        isGroupChat: false,
+                        platformType: 'instagram',
+                        timeOfDay: 16,
+                        dayOfWeek: 2,
+                    }
+                },
+                'grooming-pattern': {
+                    prediction: {
+                        probability: 0.92,
+                        confidence: 'high',
+                        confidenceScore: 0.98,
+                        factors: [
+                            { factor: 'Grooming language', impact: 50, description: 'Mature for age comments' },
+                            { factor: 'Secret requests', impact: 45, description: 'Don\'t tell anyone' },
+                            { factor: 'No mutual friends', impact: 25, description: 'Unknown contact' },
+                            { factor: 'Inappropriate intent', impact: 40, description: 'Photo requests' },
+                        ],
+                        recommendation: '⛔ DANGER: This person shows strong signs of being a stranger with harmful intent. STOP engaging immediately.'
+                    },
+                    features: {
+                        accountAgeDays: 2,
+                        followerRatio: 0.01,
+                        verificationStatus: false,
+                        profileCompleteness: 0.2,
+                        hasProfilePhoto: false,
+                        bioLength: 10,
+                        accountType: 'personal',
+                        activityScore: 0.2,
+                        mutualFriends: 0,
+                        mutualFriendsRatio: 0,
+                        previousInteractions: 0,
+                        interactionFrequency: 0,
+                        responseTime: 0,
+                        conversationDepth: 4,
+                        suspiciousLinks: 0,
+                        personalInfoRequests: 0,
+                        pressureTactics: 1,
+                        inappropriateLanguage: 0,
+                        groomingLanguage: 2,
+                        secrecyRequests: 1,
+                        giftOffers: 0,
+                        transitionSpeed: 0.8,
+                        isPublicPost: false,
+                        isDirectMessage: true,
+                        isGroupChat: false,
+                        platformType: 'instagram',
+                        timeOfDay: 23,
+                        dayOfWeek: 2,
+                    }
+                },
+                'group-chat': {
+                    prediction: {
+                        probability: 0.45,
+                        confidence: 'medium',
+                        confidenceScore: 0.75,
+                        factors: [
+                            { factor: 'Unknown in group', impact: 20, description: 'New group member' },
+                            { factor: 'Personal questions', impact: 25, description: 'Asking about school' },
+                        ],
+                        recommendation: '🔶 Be careful! This information might be seen by people you don\'t know. Are you sure you want to share it?'
+                    },
+                    features: {
+                        accountAgeDays: 14,
+                        followerRatio: 0.3,
+                        verificationStatus: false,
+                        profileCompleteness: 0.5,
+                        hasProfilePhoto: true,
+                        bioLength: 50,
+                        accountType: 'personal',
+                        activityScore: 1.2,
+                        mutualFriends: 2,
+                        mutualFriendsRatio: 0.1,
+                        previousInteractions: 0,
+                        interactionFrequency: 0,
+                        responseTime: 0,
+                        conversationDepth: 4,
+                        suspiciousLinks: 0,
+                        personalInfoRequests: 1,
+                        pressureTactics: 0,
+                        inappropriateLanguage: 0,
+                        groomingLanguage: 0,
+                        secrecyRequests: 0,
+                        giftOffers: 0,
+                        transitionSpeed: 0.2,
+                        isPublicPost: false,
+                        isDirectMessage: false,
+                        isGroupChat: true,
+                        platformType: 'instagram',
+                        timeOfDay: 17,
+                        dayOfWeek: 2,
+                    }
+                }
+            };
+
+            const handleScenarioSelect = (scenarioId) => {
+                setCurrentScenario(scenarioId);
+                setActiveTab('simulation');
+                setShowAlert(false);
+                setShowFeatures(false);
+            };
+
+            const handleMessage = (msg, index) => {
+                const scenario = scenarios[currentScenario];
+                if (index === 2 || (currentScenario === 'grooming-pattern' && index === 1)) {
+                    setTimeout(() => {
+                        setPrediction(scenario.prediction);
+                        setFeatures(scenario.features);
+                        setShowAlert(true);
+                        setShowFeatures(true);
+                    }, 500);
+                }
+            };
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40">
+                        <div className="max-w-7xl mx-auto px-4 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl">
+                                        <span className="text-2xl">🛡️</span>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold text-white">Privacy Shadow</h1>
+                                        <p className="text-sm text-slate-400">ML-Based Stranger Detection Demo</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
+                                        TensorFlow.js Active
+                                    </span>
+                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
+                                        28 Features
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 py-8">
+                        {activeTab === 'intro' && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-center mb-12"
+                            >
+                                <h2 className="text-4xl font-bold text-white mb-4">
+                                    Real-Time Stranger Detection
+                                </h2>
+                                <p className="text-xl text-slate-400 mb-8">
+                                    Experience the power of ML-driven safety monitoring for social media
+                                </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+                                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                                        <div className="text-3xl mb-2">🧠</div>
+                                        <h3 className="font-bold text-white mb-1">28 Features</h3>
+                                        <p className="text-sm text-slate-400">Comprehensive analysis</p>
+                                    </div>
+                                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                                        <div className="text-3xl mb-2">⚡</div>
+                                        <h3 className="font-bold text-white mb-1">Real-Time</h3>
+                                        <p className="text-sm text-slate-400">&lt;200ms inference</p>
+                                    </div>
+                                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                                        <div className="text-3xl mb-2">🎯</div>
+                                        <h3 className="font-bold text-white mb-1">High Accuracy</h3>
+                                        <p className="text-sm text-slate-400">&gt;80% precision</p>
+                                    </div>
+                                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                                        <div className="text-3xl mb-2">🛡️</div>
+                                        <h3 className="font-bold text-white mb-1">Privacy First</h3>
+                                        <p className="text-sm text-slate-400">Local processing</p>
+                                    </div>
+                                </div>
+
+                                <h3 className="text-2xl font-bold text-white mb-6">Choose a Scenario</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {demoScenarios.map((scenario) => (
+                                        <motion.button
+                                            key={scenario.id}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleScenarioSelect(scenario.id)}
+                                            className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600 hover:border-blue-500 transition-all"
+                                        >
+                                            <div className="text-4xl mb-3">{scenario.icon}</div>
+                                            <h4 className="font-bold text-white mb-1">{scenario.title}</h4>
+                                            <p className="text-sm text-slate-400">{scenario.description}</p>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'simulation' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Conversation */}
+                                <div className="lg:col-span-2">
+                                    <div className="mb-4">
+                                        <button
+                                            onClick={() => setActiveTab('intro')}
+                                            className="text-blue-400 hover:text-blue-300 flex items-center gap-2 mb-4"
+                                        >
+                                            ← Back to scenarios
+                                        </button>
+                                        <h2 className="text-2xl font-bold text-white mb-2">
+                                            {demoScenarios.find(s => s.id === currentScenario)?.title}
+                                        </h2>
+                                        <p className="text-slate-400">
+                                            Watch as our ML system analyzes the conversation in real-time
+                                        </p>
+                                    </div>
+                                    <ConversationSimulator
+                                        scenario={currentScenario}
+                                        onMessage={handleMessage}
+                                    />
+                                </div>
+
+                                {/* Features Panel */}
+                                <div className="space-y-4">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700"
+                                    >
+                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                                            <span className="text-xl">📊</span>
+                                            Feature Extraction
+                                        </h3>
+                                        <div className="text-sm text-slate-400 mb-4">
+                                            Extracting 28 comprehensive features in real-time...
+                                        </div>
+                                        {showFeatures && features ? (
+                                            <FeatureVisualization features={features} />
+                                        ) : (
+                                            <div className="text-center py-8 text-slate-500">
+                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                                                <p>Analyzing conversation...</p>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Stranger Alert */}
+                    <AnimatePresence>
+                        {showAlert && prediction && features && (
+                            <StrangerAlert
+                                prediction={prediction}
+                                features={features}
+                                onClose={() => setShowAlert(false)}
+                                onBlock={() => {
+                                    alert('User blocked and reported! ✅');
+                                    setShowAlert(false);
+                                }}
+                                onContinue={() => {
+                                    alert('User marked as known. Conversation will continue. ✅');
+                                    setShowAlert(false);
+                                }}
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* Footer */}
+                    <footer className="fixed bottom-0 left-0 right-0 bg-slate-800/50 backdrop-blur-sm border-t border-slate-700 py-4">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex items-center justify-between text-sm text-slate-400">
+                                <div className="flex items-center gap-4">
+                                    <span>🔒 Privacy Shadow Extension</span>
+                                    <span>•</span>
+                                    <span>FOSSASIA Hackathon 2025</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span>System Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

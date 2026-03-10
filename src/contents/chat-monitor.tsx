@@ -48,6 +48,7 @@ const ChatMonitor = () => {
     if (!platform) return
 
     let debounceTimer: ReturnType<typeof setTimeout>
+    let lastSentKey = ""
 
     // Cache stranger risk so we don't re-scrape on every keystroke
     let cachedStrangerRisk: StrangerRiskProfile | null = null
@@ -86,6 +87,14 @@ const ChatMonitor = () => {
           strangerRisk,
         })
 
+        // Deduplicate: don't re-send if same detections on same platform
+        const dedupKey = detections
+          .map((d) => `${d.category}:${d.match}`)
+          .sort()
+          .join("|")
+        if (dedupKey === lastSentKey) return
+        lastSentKey = dedupKey
+
         // Send event to background
         const event: DetectionEvent = {
           id: crypto.randomUUID(),
@@ -97,8 +106,17 @@ const ChatMonitor = () => {
           harmScore,
           blocked: harmScore.level === "critical" || harmScore.level === "high",
         }
-        chrome.runtime.sendMessage({ type: "PII_DETECTED", event })
+        if (!chrome.runtime?.id) {
+          console.warn("SafeChild: extension context invalidated, skipping")
+          return
+        }
+        chrome.runtime.sendMessage({ type: "PII_DETECTED", event }, () => {
+          if (chrome.runtime.lastError) {
+            console.warn("SafeChild:", chrome.runtime.lastError.message)
+          }
+        })
       } else {
+        lastSentKey = ""
         setWarning((prev) => ({ ...prev, visible: false }))
       }
     }
@@ -139,52 +157,52 @@ const ChatMonitor = () => {
     document.addEventListener("keyup", handleInput, true)
     document.addEventListener("paste", handleInput, true)
 
+    // Track already-scanned elements to avoid duplicate alerts
+    const scannedElements = new WeakSet<Element>()
+
+    const scanMessage = (msg: Element) => {
+      if (scannedElements.has(msg)) return
+      scannedElements.add(msg)
+
+      const text = msg.textContent || ""
+      if (text.length < 3) return
+
+      const detections = detectPII(text)
+      if (detections.length === 0) return
+
+      const harmScore = calculateHarmScore(detections)
+      if (harmScore.level === "safe") return
+
+      const el = msg as HTMLElement
+      const outlineColor =
+        harmScore.level === "critical" || harmScore.level === "high"
+          ? "#ef4444"
+          : harmScore.level === "medium"
+            ? "#eab308"
+            : "#84cc16"
+      el.style.outline = `2px solid ${outlineColor}`
+      el.style.borderRadius = "4px"
+      el.title = `Warning: This message contains sensitive info (${detections.map((d) => d.category).join(", ")})`
+    }
+
+    // Scan all visible messages on the page
+    const scanAllMessages = () => {
+      for (const sel of platform.messageSelectors) {
+        const messages = document.querySelectorAll(sel)
+        messages.forEach(scanMessage)
+      }
+    }
+
     // MutationObserver for dynamically loaded chat messages
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue
-
-          // Check if new messages contain PII (incoming messages)
           for (const sel of platform.messageSelectors) {
             const messages = node.matches?.(sel)
               ? [node]
               : Array.from(node.querySelectorAll(sel))
-
-            for (const msg of messages) {
-              const text = msg.textContent || ""
-              const detections = detectPII(text)
-              if (detections.length > 0) {
-                const harmScore = calculateHarmScore(detections)
-                // Highlight messages containing PII from others
-                if (
-                  harmScore.level === "high" ||
-                  harmScore.level === "critical" ||
-                  harmScore.level === "medium"
-                ) {
-                  const el = msg as HTMLElement
-                  el.style.outline = "2px solid #ef4444"
-                  el.style.borderRadius = "4px"
-                  el.title = `Warning: This message contains sensitive info (${detections.map((d) => d.category).join(", ")})`
-
-                  // Send to background for browser notification
-                  const incomingEvent: DetectionEvent = {
-                    id: crypto.randomUUID(),
-                    timestamp: Date.now(),
-                    platform: platform.name,
-                    url: window.location.href,
-                    message: text.substring(0, 200),
-                    detections,
-                    harmScore,
-                    blocked: false,
-                  }
-                  chrome.runtime.sendMessage({
-                    type: "PII_DETECTED",
-                    event: incomingEvent,
-                  })
-                }
-              }
-            }
+            messages.forEach(scanMessage)
           }
         }
       }
@@ -203,16 +221,22 @@ const ChatMonitor = () => {
       }
     }
 
+    // Initial scan of existing messages
+    scanAllMessages()
     startObserving()
-    // Re-check for containers periodically (SPAs load content dynamically)
-    const containerInterval = setInterval(startObserving, 3000)
+
+    // Periodic re-scan: catches messages loaded by SPA navigation, scrolling, etc.
+    const scanInterval = setInterval(() => {
+      scanAllMessages()
+      startObserving()
+    }, 2000)
 
     return () => {
       document.removeEventListener("input", handleInput, true)
       document.removeEventListener("keyup", handleInput, true)
       document.removeEventListener("paste", handleInput, true)
       observer.disconnect()
-      clearInterval(containerInterval)
+      clearInterval(scanInterval)
       clearTimeout(debounceTimer)
     }
   }, [])

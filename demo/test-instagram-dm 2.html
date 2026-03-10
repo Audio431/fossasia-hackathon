@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram DM - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #fafafa;
+        }
+
+        .instagram-header {
+            background: white;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .instagram-logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dm-container {
+            max-width: 935px;
+            margin: 0 auto;
+            background: white;
+            min-height: calc(100vh - 60px);
+            display: flex;
+        }
+
+        .dm-sidebar {
+            width: 350px;
+            border-right: 1px solid #dbdbdb;
+            overflow-y: auto;
+        }
+
+        .dm-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dm-header {
+            padding: 20px;
+            border-bottom: 1px solid #dbdbdb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-pic {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            padding: 2px;
+        }
+
+        .profile-pic-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .profile-info h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .profile-info p {
+            font-size: 14px;
+            color: #8e8e8e;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message {
+            max-width: 60%;
+            padding: 12px 16px;
+            border-radius: 22px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.received {
+            background: #efefef;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.sent {
+            background: #3797f0;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-input-container {
+            padding: 20px;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #dbdbdb;
+            border-radius: 22px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .message-input:focus {
+            border-color: #8e8e8e;
+        }
+
+        .send-button {
+            background: #3797f0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 22px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .send-button:hover {
+            background: #2874c9;
+        }
+
+        .scenario-selector {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .scenario-selector h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .scenario-button {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            margin-bottom: 8px;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .scenario-button:hover {
+            background: #fafafa;
+            border-color: #3797f0;
+        }
+
+        .scenario-button.active {
+            background: #3797f0;
+            color: white;
+            border-color: #3797f0;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #8e8e8e;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+
+        .extension-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Instagram Header -->
+    <div class="instagram-header">
+        <div class="instagram-logo">Instagram</div>
+        <div style="font-size: 12px; color: #8e8e8e;">Privacy Shadow Test Page</div>
+    </div>
+
+    <!-- Scenario Selector -->
+    <div class="scenario-selector">
+        <h3>🎯 Choose Scenario</h3>
+        <button class="scenario-button" onclick="loadScenario('safe')">
+            ✅ Safe Conversation
+            <div style="font-size: 11px; color: #8e8e8e; margin-top: 4px;">Chatting with a friend</div>
+        </button>
+        <button class="scenario-button" onclick="loadScenario('stranger')">
+            ⚠️ Stranger Danger
+            <div style="font-size: 11px; color: #8e8e8e; margin-top: 4px;">Asks for personal info</div>
+        </button>
+        <button class="scenario-button" onclick="loadScenario('grooming')">
+            🚨 Grooming Pattern
+            <div style="font-size: 11px; color: #8e8e8e; margin-top: 4px;">Inappropriate escalation</div>
+        </button>
+        <button class="scenario-button" onclick="loadScenario('group')">
+            👥 Group Chat
+            <div style="font-size: 11px; color: #8e8e8e; margin-top: 4px;">Unknown in group</div>
+        </button>
+    </div>
+
+    <!-- DM Container -->
+    <div class="dm-container">
+        <div class="dm-main">
+            <!-- DM Header -->
+            <div class="dm-header">
+                <div class="profile-pic">
+                    <div class="profile-pic-inner" id="profileEmoji">👤</div>
+                </div>
+                <div class="profile-info">
+                    <h2 id="username">Select a scenario</h2>
+                    <p id="userStatus">Choose a scenario to begin</p>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages-container" id="messagesContainer">
+                <div style="text-align: center; color: #8e8e8e; padding: 40px;">
+                    <p>👆 Select a scenario above to see the Privacy Shadow extension in action</p>
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div class="message-input-container">
+                <input type="text" class="message-input" placeholder="Message..." id="messageInput" disabled>
+                <button class="send-button" id="sendButton" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extension Badge -->
+    <div class="extension-badge">
+        <div class="status-indicator"></div>
+        Privacy Shadow Extension Active
+    </div>
+
+    <script>
+        const scenarios = {
+            safe: {
+                username: 'sarah_johnson',
+                status: 'Active now • 15 mutual friends',
+                emoji: '👩',
+                messages: [
+                    { type: 'received', text: 'Hey! Are you coming to the game tonight? 🏀', delay: 1000 },
+                    { type: 'typing', delay: 500 },
+                    { type: 'sent', text: 'Yeah! I\'ll be there at 7pm', delay: 2000 },
+                    { type: 'received', text: 'Great! See you there! Go Tigers! 🐯', delay: 1500 },
+                ]
+            },
+            stranger: {
+                username: 'coolguy_2024',
+                status: 'Active now • 0 mutual friends',
+                emoji: '🎭',
+                messages: [
+                    { type: 'received', text: 'Hey! I saw your profile, you seem cool', delay: 1000 },
+                    { type: 'typing', delay: 500 },
+                    { type: 'sent', text: 'Uh, do I know you?', delay: 2000 },
+                    { type: 'received', text: 'No, but I\'d love to get to know you 😊', delay: 1500 },
+                    { type: 'received', text: 'Where do you live? I can come visit you!', delay: 2000 },
+                ]
+            },
+            grooming: {
+                username: 'understand_me',
+                status: 'Active now • 0 mutual friends',
+                emoji: '😈',
+                messages: [
+                    { type: 'received', text: 'You\'re really mature for your age 👀', delay: 1000 },
+                    { type: 'typing', delay: 500 },
+                    { type: 'sent', text: 'Thanks? Who is this?', delay: 2000 },
+                    { type: 'received', text: 'I\'m someone who actually understands you', delay: 1500 },
+                    { type: 'received', text: 'Unlike your parents... they don\'t get you like I do', delay: 2000 },
+                    { type: 'received', text: 'Can you send me a photo? Don\'t tell anyone, this is our secret 🤫', delay: 2500 },
+                ]
+            },
+            group: {
+                username: 'cool_kids_chat',
+                status: 'Group chat • 5 participants',
+                emoji: '👥',
+                messages: [
+                    { type: 'received', text: 'User123 has joined the group', delay: 1000 },
+                    { type: 'received', text: 'Hey everyone! 👋', delay: 1500 },
+                    { type: 'sent', text: 'Hi! Welcome!', delay: 2000 },
+                    { type: 'received', text: 'What school do you all go to? Just curious 🏫', delay: 2000 },
+                    { type: 'sent', text: 'We go to Lincoln High', delay: 1500 },
+                ]
+            }
+        };
+
+        let currentScenario = null;
+        let messageIndex = 0;
+
+        function loadScenario(scenarioKey) {
+            const scenario = scenarios[scenarioKey];
+            currentScenario = scenario;
+            messageIndex = 0;
+
+            // Update header
+            document.getElementById('username').textContent = scenario.username;
+            document.getElementById('userStatus').textContent = scenario.status;
+            document.getElementById('profileEmoji').textContent = scenario.emoji;
+
+            // Clear messages
+            document.getElementById('messagesContainer').innerHTML = '';
+
+            // Enable input
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+
+            // Update active button
+            document.querySelectorAll('.scenario-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Start conversation
+            playConversation();
+        }
+
+        async function playConversation() {
+            if (!currentScenario || messageIndex >= currentScenario.messages.length) return;
+
+            const message = currentScenario.messages[messageIndex];
+            const container = document.getElementById('messagesContainer');
+
+            if (message.type === 'typing') {
+                // Show typing indicator
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message received typing-indicator';
+                typingDiv.innerHTML = '<span></span><span></span><span></span>';
+                typingDiv.id = 'typing-indicator';
+                container.appendChild(typingDiv);
+                container.scrollTop = container.scrollHeight;
+
+                await new Promise(resolve => setTimeout(resolve, message.delay));
+                typingDiv.remove();
+            } else {
+                await new Promise(resolve => setTimeout(resolve, message.delay));
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${message.type}`;
+                messageDiv.textContent = message.text;
+                container.appendChild(messageDiv);
+                container.scrollTop = container.scrollHeight;
+
+                // Trigger content script detection
+                window.postMessage({
+                    type: 'NEW_MESSAGE',
+                    message: message.text,
+                    sender: message.type,
+                    scenario: currentScenario
+                }, '*');
+            }
+
+            messageIndex++;
+            playConversation();
+        }
+
+        // Message send handler
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            messageDiv.textContent = text;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+
+            input.value = '';
+
+            window.postMessage({
+                type: 'NEW_MESSAGE',
+                message: text,
+                sender: 'sent',
+                scenario: currentScenario
+            }, '*');
+        });
+
+        // Enter key to send
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendButton').click();
+            }
+        });
+    </script>
+</body>
+</html>

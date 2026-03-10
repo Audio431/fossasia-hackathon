@@ -1,5 +1,18 @@
 import { addDetectionEvent, getDetectionEvents, getSettings } from "../lib/storage"
-import type { DetectionEvent, ParentNotificationConfig } from "../lib/types"
+import type { DetectionEvent } from "../lib/types"
+
+// Rate limit LINE alerts: cooldown per platform, dedup by detection fingerprint
+let lastLineSent = 0
+let lastLineFingerprint = ""
+const LINE_COOLDOWN_MS = 10_000
+
+/** Build a fingerprint from detected PII categories + matched strings (not the full message) */
+function detectionFingerprint(event: DetectionEvent): string {
+  return event.platform + "|" + event.detections
+    .map((d) => `${d.category}:${d.match.trim().toLowerCase()}`)
+    .sort()
+    .join(",")
+}
 
 // Listen for PII detection events from content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -8,16 +21,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     addDetectionEvent(event).then(async () => {
       updateBadge()
       showNotification(event)
-      // Send SMS to parent if high/critical
-      if (event.harmScore.level === "high" || event.harmScore.level === "critical") {
-        await sendParentSMS(event)
+      // Send LINE message to parent for any detected PII (rate limited + deduped)
+      if (event.harmScore.level !== "safe") {
+        const now = Date.now()
+        const fingerprint = detectionFingerprint(event)
+        if (fingerprint === lastLineFingerprint) {
+          console.log("SafeChild LINE: same PII already reported, skipping")
+        } else if (now - lastLineSent >= LINE_COOLDOWN_MS) {
+          lastLineSent = now
+          lastLineFingerprint = fingerprint
+          await sendParentLINE(event)
+        } else {
+          console.log("SafeChild LINE: rate limited, skipping alert")
+        }
       }
       sendResponse({ success: true })
     })
     return true // async response
   }
 
-  if (message.type === "TEST_SMS") {
+  if (message.type === "TEST_LINE") {
     const testEvent: DetectionEvent = {
       id: "test-" + Date.now(),
       timestamp: Date.now(),
@@ -28,7 +51,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       harmScore: { total: 75, breakdown: { full_name: 20, address: 0, phone: 25, email: 0, school: 25, age_dob: 0, location: 0 }, level: "high" },
       blocked: true,
     }
-    sendParentSMS(testEvent).then(() => {
+    sendParentLINE(testEvent).then(() => {
       sendResponse({ success: true })
     }).catch((err) => {
       sendResponse({ success: false, error: String(err) })
@@ -132,51 +155,73 @@ function showNotification(event: DetectionEvent) {
   })
 }
 
-async function sendParentSMS(event: DetectionEvent) {
+async function sendParentLINE(event: DetectionEvent) {
   const settings = await getSettings()
   const config = settings.parentNotification
-  if (!config?.enabled || !config.parentPhone) return
 
-  // Use env vars as fallback for Twilio credentials
-  const accountSid = config.twilioAccountSid || process.env.PLASMO_PUBLIC_TWILIO_ACCOUNT_SID || ""
-  const authToken = config.twilioAuthToken || process.env.PLASMO_PUBLIC_TWILIO_AUTH_TOKEN || ""
-  const fromNumber = config.twilioFromNumber || process.env.PLASMO_PUBLIC_TWILIO_FROM_NUMBER || ""
+  // Use settings from popup UI, or fall back to build-time env vars
+  const accessToken = config?.lineChannelAccessToken || process.env.PLASMO_PUBLIC_LINE_CHANNEL_ACCESS_TOKEN || ""
+  const userId = config?.lineUserId || process.env.PLASMO_PUBLIC_LINE_USER_ID || ""
 
-  if (!accountSid || !authToken || !fromNumber) return
+  // Only skip if user explicitly configured LINE credentials in settings AND disabled it
+  if (config && config.enabled === false && config.lineChannelAccessToken) return
 
-  const categories = event.detections
-    .map((d) => d.category.replace("_", " "))
-    .join(", ")
+  if (!accessToken || !userId) {
+    console.warn("SafeChild LINE: missing accessToken or userId, skipping")
+    return
+  }
 
-  const body =
-    `[SafeChild Alert] Your child shared sensitive info (${categories}) ` +
-    `on ${event.platform}. Risk: ${event.harmScore.total}/100 (${event.harmScore.level}). ` +
-    `Please check in with them.`
+  const detectionDetails = event.detections
+    .map((d) => `${d.category.replace("_", " ")}: "${d.match.substring(0, 50)}"`)
+    .join("\n• ")
 
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
-  const auth = btoa(`${accountSid}:${authToken}`)
+  const level = event.harmScore.level
+  const icon = level === "critical" ? "🚨" : level === "high" ? "🚨" : "⚠️"
+  const header = level === "critical" || level === "high" ? "SafeChild Alert" : "SafeChild Warning"
+  const action =
+    level === "critical"
+      ? "Please check in with your child immediately."
+      : level === "high"
+        ? "Please check in with your child."
+        : "Consider talking to your child about online safety."
+
+  const multiplier = event.harmScore.strangerMultiplier ?? 1.0
+  const strangerNote = multiplier > 1.0
+    ? `\n⚠ Stranger risk detected (score multiplied x${multiplier.toFixed(1)})`
+    : ""
+
+  const text =
+    `${icon} [${header}]\n\n` +
+    `Your child tried to share:\n` +
+    `• ${detectionDetails}\n\n` +
+    `Platform: ${event.platform}\n` +
+    `Risk score: ${event.harmScore.total}/100 (${level.toUpperCase()})` +
+    strangerNote +
+    `\n\n` +
+    action
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      body: new URLSearchParams({
-        To: config.parentPhone,
-        From: fromNumber,
-        Body: body,
+      body: JSON.stringify({
+        to: userId,
+        messages: [{ type: "text", text }],
       }),
     })
 
     if (!res.ok) {
-      console.error("SafeChild SMS failed:", res.status, await res.text())
+      const body = await res.text()
+      console.error("SafeChild LINE failed:", res.status, body)
+      throw new Error(`LINE API ${res.status}: ${body}`)
     } else {
-      console.log("SafeChild SMS sent to parent:", config.parentPhone)
+      console.log("SafeChild LINE alert sent to parent:", level, event.platform)
     }
   } catch (err) {
-    console.error("SafeChild SMS error:", err)
+    console.error("SafeChild LINE error:", err)
   }
 }
 

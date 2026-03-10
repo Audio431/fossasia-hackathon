@@ -34,10 +34,8 @@ export interface DetectionEvent {
 
 export interface ParentNotificationConfig {
   enabled: boolean
-  parentPhone: string
-  twilioAccountSid: string
-  twilioAuthToken: string
-  twilioFromNumber: string
+  lineChannelAccessToken: string
+  lineUserId: string
 }
 
 export interface UserSettings {

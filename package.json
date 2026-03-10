@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "description": "Browser extension that warns children when they share personal information on social media and scores harm level in real-time",
   "scripts": {
-    "dev": "plasmo dev",
-    "build": "plasmo build",
+    "dev": "plasmo dev --source-maps",
+    "build": "plasmo build --source-maps",
     "package": "plasmo package",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -31,6 +31,7 @@
     "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.3.1",
     "playwright": "^1.58.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
@@ -47,7 +48,8 @@
       "https://messenger.com/*",
       "https://web.whatsapp.com/*",
       "https://*.tiktok.com/*",
-      "https://*.discord.com/*"
+      "https://*.discord.com/*",
+      "https://api.line.me/*"
     ]
   }
 }

@@ -15,10 +15,8 @@ interface Stats {
 
 const DEFAULT_PARENT_CONFIG: ParentNotificationConfig = {
   enabled: false,
-  parentPhone: "",
-  twilioAccountSid: "",
-  twilioAuthToken: "",
-  twilioFromNumber: "",
+  lineChannelAccessToken: "",
+  lineUserId: "",
 }
 
 const Popup = () => {
@@ -48,13 +46,13 @@ const Popup = () => {
     setTimeout(() => setSaveStatus(""), 2000)
   }
 
-  const handleTestSMS = () => {
+  const handleTestLINE = () => {
     setSaveStatus("Sending...")
-    chrome.runtime.sendMessage({ type: "TEST_SMS" }, (response) => {
+    chrome.runtime.sendMessage({ type: "TEST_LINE" }, (response) => {
       if (response?.success) {
-        setSaveStatus("Test SMS sent!")
+        setSaveStatus("Test message sent!")
       } else {
-        setSaveStatus("Failed: " + (response?.error || "check Twilio config"))
+        setSaveStatus("Failed: " + (response?.error || "check LINE config"))
       }
       setTimeout(() => setSaveStatus(""), 3000)
     })
@@ -172,9 +170,9 @@ const Popup = () => {
       )}
       {tab === "settings" && (
         <div className="settings-container">
-          <h3>Parent SMS Notifications</h3>
+          <h3>Parent LINE Notifications</h3>
           <p className="settings-desc">
-            Get an SMS alert when your child shares high-risk personal information.
+            Get a LINE message when your child shares high-risk personal information.
           </p>
 
           <label className="setting-toggle">
@@ -185,52 +183,30 @@ const Popup = () => {
                 setParentConfig({ ...parentConfig, enabled: e.target.checked })
               }
             />
-            <span>Enable SMS alerts</span>
+            <span>Enable LINE alerts</span>
           </label>
 
           {parentConfig.enabled && (
             <div className="settings-fields">
               <label className="setting-field">
-                <span>Parent Phone Number</span>
-                <input
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={parentConfig.parentPhone}
-                  onChange={(e) =>
-                    setParentConfig({ ...parentConfig, parentPhone: e.target.value })
-                  }
-                />
-              </label>
-              <label className="setting-field">
-                <span>Twilio Account SID</span>
-                <input
-                  type="text"
-                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  value={parentConfig.twilioAccountSid}
-                  onChange={(e) =>
-                    setParentConfig({ ...parentConfig, twilioAccountSid: e.target.value })
-                  }
-                />
-              </label>
-              <label className="setting-field">
-                <span>Twilio Auth Token</span>
+                <span>LINE Channel Access Token</span>
                 <input
                   type="password"
-                  placeholder="Your auth token"
-                  value={parentConfig.twilioAuthToken}
+                  placeholder="Your channel access token"
+                  value={parentConfig.lineChannelAccessToken}
                   onChange={(e) =>
-                    setParentConfig({ ...parentConfig, twilioAuthToken: e.target.value })
+                    setParentConfig({ ...parentConfig, lineChannelAccessToken: e.target.value })
                   }
                 />
               </label>
               <label className="setting-field">
-                <span>Twilio Phone Number (From)</span>
+                <span>LINE User ID</span>
                 <input
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={parentConfig.twilioFromNumber}
+                  type="text"
+                  placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={parentConfig.lineUserId}
                   onChange={(e) =>
-                    setParentConfig({ ...parentConfig, twilioFromNumber: e.target.value })
+                    setParentConfig({ ...parentConfig, lineUserId: e.target.value })
                   }
                 />
               </label>
@@ -240,9 +216,9 @@ const Popup = () => {
           <button className="save-btn" onClick={handleSaveParentConfig}>
             Save Settings
           </button>
-          {parentConfig.enabled && parentConfig.parentPhone && (
-            <button className="test-btn" onClick={handleTestSMS}>
-              Send Test SMS
+          {parentConfig.enabled && parentConfig.lineUserId && (
+            <button className="test-btn" onClick={handleTestLINE}>
+              Send Test LINE Message
             </button>
           )}
           {saveStatus && <span className="save-status">{saveStatus}</span>}

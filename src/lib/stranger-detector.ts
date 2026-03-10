@@ -43,43 +43,63 @@ function scrapeInstagramProfile(): ProfileSignals {
     accountName: null,
   }
 
-  // Get the DM header — contains recipient name and sometimes follow status
+  // Get the DM header — the top bar of the conversation
   const header = document.querySelector('div[role="main"] header')
     || document.querySelector('div[role="banner"]')
 
   if (header) {
-    // Recipient name from DM thread header
     const nameEl = header.querySelector('span[dir="auto"]')
       || header.querySelector('a[role="link"] span')
     if (nameEl) {
       signals.accountName = nameEl.textContent?.trim() || null
     }
 
-    // Verified badge (blue checkmark SVG)
     const verified = header.querySelector('svg[aria-label="Verified"]')
       || header.querySelector('[title="Verified"]')
     signals.isVerified = !!verified
   }
 
-  // "Following" / "Follow" button indicates relationship
-  const followBtn = document.querySelector('button:has(div)')
-  const allButtons = document.querySelectorAll('button')
-  for (const btn of allButtons) {
-    const text = btn.textContent?.trim().toLowerCase() || ""
-    if (text === "following" || text === "friends") {
-      signals.isFollowedByUser = true
+  // Instagram DM: scan the entire page for follow-related buttons and text.
+  // The info panel (opened via (i) button) or thread header may contain these.
+  // Also check for "Follow" / "Following" / "Follow Back" as link text.
+  const allElements = document.querySelectorAll('button, a, div[role="button"]')
+  let foundFollowSignal = false
+  for (const el of allElements) {
+    const text = (el.textContent || "").trim()
+    const lower = text.toLowerCase()
+
+    // Exact matches to avoid false positives on "Followers" etc.
+    if (lower === "following" || lower === "friends" || lower === "message") {
+      // "Following" button means we follow them
+      if (lower === "following") {
+        signals.isFollowedByUser = true
+        foundFollowSignal = true
+      }
     }
-    if (text === "follow back") {
+    if (lower === "follow back") {
       signals.isFollowingUser = true
       signals.isFollowedByUser = false
+      foundFollowSignal = true
     }
-    if (text === "follow" && !text.includes("following")) {
-      // They show "Follow" — we're NOT following them
+    if (lower === "follow" && el.tagName === "BUTTON") {
+      // Standalone "Follow" button means we don't follow them
       signals.isFollowedByUser = false
+      foundFollowSignal = true
     }
   }
 
-  // Try to extract follower/post counts from any visible profile info
+  // Instagram DM also shows "Followed by..." or "You follow each other" text
+  const bodyText = document.body.innerText || ""
+  if (bodyText.includes("You follow each other")) {
+    signals.isFollowedByUser = true
+    signals.isFollowingUser = true
+    foundFollowSignal = true
+  } else if (/follows?\s+you/i.test(bodyText)) {
+    signals.isFollowingUser = true
+    foundFollowSignal = true
+  }
+
+  // Check the DM thread info panel for follower/post counts
   const statElements = document.querySelectorAll('span[title], span[class*="count"]')
   for (const el of statElements) {
     const title = el.getAttribute("title") || el.textContent || ""
@@ -89,6 +109,11 @@ function scrapeInstagramProfile(): ProfileSignals {
       if (context.includes("follower")) signals.followerCount = num
       if (context.includes("post")) signals.postCount = num
     }
+  }
+
+  // If no follow signal was found from DOM, default to unknown (don't assume stranger)
+  if (!foundFollowSignal) {
+    signals.isFollowedByUser = true // benefit of the doubt
   }
 
   return signals
